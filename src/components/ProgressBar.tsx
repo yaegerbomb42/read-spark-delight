@@ -39,6 +39,17 @@ export function ProgressBar({
     return "h-3";
   };
 
+  // Create custom indicator styles
+  const indicatorStyles = {
+    '--progress-width': `${value}%`,
+    // Apply color variants to the indicator style
+    backgroundColor: colorVariant === "success" 
+      ? "var(--green-500, #22c55e)" 
+      : colorVariant === "warning" 
+        ? "var(--yellow-500, #eab308)" 
+        : undefined
+  } as React.CSSProperties;
+
   return (
     <div className="w-full space-y-1.5">
       {(label || showPercentage) && (
@@ -52,8 +63,7 @@ export function ProgressBar({
       <Progress 
         value={value} 
         className={`${getHeightClass()} ${animate ? 'animate-progress-fill' : ''}`}
-        style={{ '--progress-width': `${value}%` } as React.CSSProperties}
-        indicatorClassName={getBarClass()}
+        style={indicatorStyles}
       />
     </div>
   );
