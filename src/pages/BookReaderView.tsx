@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react'; // Imported useRef
-import { useParams, Link } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams, Link, useLocation } from 'react-router-dom'; // Imported useLocation
 import type { Book } from '@/types';
 import { useTTS } from '@/hooks/useTTS';
 import { Button } from '@/components/ui/button';
 
 const BookReaderView: React.FC = () => {
   const { bookId } = useParams<{ bookId: string }>();
+  const location = useLocation(); // Get location object
   const [book, setBook] = useState<Book | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -41,9 +42,21 @@ const BookReaderView: React.FC = () => {
   useEffect(() => {
     setLoading(true);
     setError(null);
-    if (isSpeaking || isPaused) { // Stop TTS if navigating to a new book or if book load fails
+    if (isSpeaking || isPaused) {
       cancel();
     }
+
+    const bookFromState = location.state?.book as Book | undefined;
+
+    if (bookFromState && bookFromState.id === bookId) {
+      setBook(bookFromState);
+      setLoading(false);
+      setError(null);
+      // console.log("Book loaded from route state:", bookFromState.title);
+      return; // Book found in state, no need to fetch from localStorage
+    }
+
+    // console.log("Book not in route state or ID mismatch, fetching from localStorage for bookId:", bookId);
     try {
       const storedBooks = localStorage.getItem('myBooks');
       if (storedBooks) {
@@ -52,19 +65,19 @@ const BookReaderView: React.FC = () => {
         if (foundBook) {
           setBook(foundBook);
         } else {
-          setError(`Book with ID "${bookId}" not found.`);
+          setError(`Book with ID "${bookId}" not found in localStorage.`);
         }
       } else {
-        setError('No books found in storage.');
+        setError('No books found in localStorage.');
       }
     } catch (err) {
       console.error("Failed to load or parse book from localStorage", err);
       setError('Failed to load book data.');
-      cancel(); // Stop TTS on error
+      cancel();
     } finally {
       setLoading(false);
     }
-  }, [bookId, cancel, isSpeaking, isPaused]);
+  }, [bookId, cancel, isSpeaking, isPaused, location.state]); // Added location.state to dependency array
 
   // Effect for restoring scroll position
   useEffect(() => {
@@ -151,7 +164,20 @@ const BookReaderView: React.FC = () => {
         {isSupported && book && (
           <div className="flex items-center gap-2">
             {!isSpeaking && !isPaused && (
-              <Button onClick={() => speak(book.content, 'en-US')} variant="outline">Speak</Button>
+              <Button
+                onClick={() => {
+                  let textForTTS = book.content;
+                  if (book.contentType === 'html') {
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = book.content;
+                    textForTTS = tempDiv.textContent || tempDiv.innerText || "";
+                  }
+                  speak(textForTTS, 'en-US');
+                }}
+                variant="outline"
+              >
+                Speak
+              </Button>
             )}
             {isSpeaking && !isPaused && (
               <Button onClick={pause} variant="outline">Pause</Button>
@@ -181,16 +207,21 @@ const BookReaderView: React.FC = () => {
       <h2 className="text-xl text-muted-foreground mb-4">{book.author}</h2>
 
       <div
-        ref={contentRef} // Attach ref here
-        className="flex-grow overflow-y-auto p-4 border rounded-md bg-muted/20"
+        ref={contentRef} // Ensure ref is attached once
+        className="flex-grow overflow-y-auto p-4 border rounded-md bg-muted/20 prose dark:prose-invert max-w-full" // Added prose for basic HTML styling
         style={{
-          whiteSpace: 'pre-wrap',
+          // whiteSpace: 'pre-wrap', // Not needed for HTML content
           maxHeight: 'calc(100vh - 250px)',
         }}
       >
-        {book.content.split('\n').map((paragraph, index) => (
-          <p key={index} className="mb-4">{paragraph || <>&nbsp;</>}</p>
-        ))}
+        {book.contentType === 'html' ? (
+          <div dangerouslySetInnerHTML={{ __html: book.content }} />
+        ) : (
+          // Fallback for 'text' or undefined contentType
+          book.content.split('\n').map((paragraph, index) => (
+            <p key={index} className="mb-4">{paragraph || <>&nbsp;</>}</p>
+          ))
+        )}
       </div>
     </div>
   );
