@@ -1,101 +1,19 @@
 
+import React, { useState, useEffect } from "react"; // Added React, useState, useEffect
 import { Header } from "@/components/Header";
 import { BookCard } from "@/components/BookCard";
 import { ReaderStats } from "@/components/ReaderStats";
 import { AudioPlayer } from "@/components/AudioPlayer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ImportBookButton } from "@/components/ImportBookButton"; // Import the new component
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Headphones, Trophy } from "lucide-react";
+import type { Book } from "@/types"; // Updated import path
 
-// Mock data - in real app would come from API/database
-const recentBooks = [
-  {
-    id: "1",
-    title: "The Psychology of Money",
-    author: "Morgan Housel",
-    coverUrl: "https://m.media-amazon.com/images/I/71sylUetxxL._AC_UF1000,1000_QL80_.jpg",
-    progress: 65,
-    rating: 4,
-    tags: ["Finance", "Psychology", "Self-Help"],
-    isAudiobook: true,
-  },
-  {
-    id: "2",
-    title: "Atomic Habits",
-    author: "James Clear",
-    coverUrl: "https://m.media-amazon.com/images/I/81bGKUa1e0L._AC_UF1000,1000_QL80_.jpg",
-    progress: 42,
-    rating: 5,
-    tags: ["Productivity", "Self-Help"],
-    isAudiobook: false,
-  },
-  {
-    id: "3",
-    title: "The Midnight Library",
-    author: "Matt Haig",
-    coverUrl: "https://m.media-amazon.com/images/I/81tCtHFtOgL._AC_UF1000,1000_QL80_.jpg",
-    progress: 23,
-    rating: 3,
-    tags: ["Fiction", "Fantasy"],
-    isAudiobook: true,
-  },
-  {
-    id: "4",
-    title: "Project Hail Mary",
-    author: "Andy Weir",
-    coverUrl: "https://m.media-amazon.com/images/I/91vS2L5YfEL._AC_UF1000,1000_QL80_.jpg",
-    progress: 87,
-    rating: 5,
-    tags: ["Sci-Fi", "Adventure"],
-    isAudiobook: true,
-  },
-];
+// Removed recentBooks and recommendedBooks
 
-const recommendedBooks = [
-  {
-    id: "5",
-    title: "Dune",
-    author: "Frank Herbert",
-    coverUrl: "https://m.media-amazon.com/images/I/81ym3QUd3KL._AC_UF1000,1000_QL80_.jpg",
-    progress: 0,
-    rating: 4,
-    tags: ["Sci-Fi", "Classic"],
-    isAudiobook: true,
-  },
-  {
-    id: "6",
-    title: "The Four Agreements",
-    author: "Don Miguel Ruiz",
-    coverUrl: "https://m.media-amazon.com/images/I/81hHy5XrdKL._AC_UF1000,1000_QL80_.jpg",
-    progress: 0,
-    rating: 4,
-    tags: ["Self-Help", "Spirituality"],
-    isAudiobook: false,
-  },
-  {
-    id: "7",
-    title: "The Alchemist",
-    author: "Paulo Coelho",
-    coverUrl: "https://m.media-amazon.com/images/I/51Z0nLAfLmL.jpg",
-    progress: 12,
-    rating: 5,
-    tags: ["Fiction", "Philosophy"],
-    isAudiobook: true,
-  },
-  {
-    id: "8",
-    title: "Sapiens",
-    author: "Yuval Noah Harari",
-    coverUrl: "https://m.media-amazon.com/images/I/71N3-2sYxSL._AC_UF1000,1000_QL80_.jpg",
-    progress: 0,
-    rating: 5,
-    tags: ["History", "Science", "Anthropology"],
-    isAudiobook: true,
-  },
-];
-
-const achievements = [
+const achievements = [ // Kept achievements as it's not part of this subtask's scope to remove
   {
     id: "a1",
     title: "Bookworm",
@@ -172,6 +90,58 @@ const achievements = [
 ];
 
 const Index = () => {
+  const [books, setBooks] = useState<Book[]>([]);
+  const [currentAudio, setCurrentAudio] = useState<Book | null>(null);
+
+  const handleBookImported = (newBook: Book) => {
+    setBooks(prevBooks => [...prevBooks, newBook]);
+  };
+
+  const handleRemoveBook = (bookIdToRemove: string) => {
+    setBooks(prevBooks => prevBooks.filter(book => book.id !== bookIdToRemove));
+    if (currentAudio?.id === bookIdToRemove) {
+      setCurrentAudio(null); // Clear current audio if it's the one being removed
+    }
+  };
+
+  const handlePlayAudioBook = (book: Book) => {
+    setCurrentAudio(book);
+  };
+
+  const handleAudioTimeUpdate = (currentTime: number, duration: number) => {
+    if (currentAudio && duration > 0) {
+      const progress = (currentTime / duration) * 100;
+      setBooks(prevBooks =>
+        prevBooks.map(b =>
+          b.id === currentAudio.id ? { ...b, progress: Math.min(100, Math.max(0, progress)) } : b
+        )
+      );
+      // Note: This directly updates books state, which triggers localStorage save.
+      // For performance on very frequent updates, debouncing localStorage save might be considered.
+    }
+  };
+
+  // Load books from localStorage on mount
+  useEffect(() => {
+    try {
+      const storedBooks = localStorage.getItem('myBooks');
+      if (storedBooks) {
+        setBooks(JSON.parse(storedBooks));
+      }
+    } catch (error) {
+      console.error("Failed to parse books from localStorage", error);
+    }
+  }, []);
+
+  // Save books to localStorage when books state changes
+  useEffect(() => {
+    // console.log("Saving books to localStorage", books); // For debugging
+    try {
+      localStorage.setItem('myBooks', JSON.stringify(books));
+    } catch (error) {
+      console.error("Failed to save books to localStorage", error);
+    }
+  }, [books]);
 
   return (
     <div className="flex flex-col min-h-screen pb-20">
@@ -181,7 +151,10 @@ const Index = () => {
         <section className="mb-8">
           <Tabs defaultValue="reading" className="w-full">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold">Your Books</h2>
+              <div className="flex items-center gap-4">
+                <h2 className="text-2xl font-bold">Your Books</h2>
+                <ImportBookButton onBookImported={handleBookImported} />
+              </div>
               <TabsList>
                 <TabsTrigger value="reading" className="flex items-center gap-1.5">
                   <BookOpen className="h-4 w-4" />
@@ -200,11 +173,11 @@ const Index = () => {
 
             <TabsContent value="reading" className="space-y-6 mt-2">
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-                {recentBooks.filter(book => !book.isAudiobook).map((book) => (
-                  <BookCard key={book.id} {...book} />
+                {books.filter(book => !book.isAudiobook).map((book) => (
+                  <BookCard key={book.id} {...book} onRemoveBook={handleRemoveBook} />
                 ))}
               </div>
-              {recentBooks.filter(book => !book.isAudiobook).length === 0 && (
+              {books.filter(book => !book.isAudiobook).length === 0 && (
                 <div className="text-center py-12">
                   <h3 className="text-lg font-medium mb-2">No books in progress</h3>
                   <p className="text-muted-foreground mb-4">Start reading to see your books here</p>
@@ -215,11 +188,16 @@ const Index = () => {
 
             <TabsContent value="listening" className="space-y-6 mt-2">
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-                {recentBooks.filter(book => book.isAudiobook).map((book) => (
-                  <BookCard key={book.id} {...book} />
+                {books.filter(book => book.isAudiobook).map((book) => (
+                  <BookCard
+                    key={book.id}
+                    {...book}
+                    onRemoveBook={handleRemoveBook}
+                    onPlayAudioBook={handlePlayAudioBook}
+                  />
                 ))}
               </div>
-              {recentBooks.filter(book => book.isAudiobook).length === 0 && (
+              {books.filter(book => book.isAudiobook).length === 0 && (
                 <div className="text-center py-12">
                   <h3 className="text-lg font-medium mb-2">No audiobooks in progress</h3>
                   <p className="text-muted-foreground mb-4">Start listening to see your audiobooks here</p>
@@ -251,17 +229,28 @@ const Index = () => {
               View all
             </Button>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-            {recommendedBooks.map((book) => (
-              <BookCard key={book.id} {...book} />
-            ))}
-          </div>
+          {/* Recommended books section - can be populated later or removed */}
+          {books.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+              {/* Placeholder: map over some recommended books if available or show empty state */}
+              {/* For now, let's show a few from the existing books as placeholders if any exist */}
+              {/* books.slice(0, 4).map((book) => (
+                <BookCard key={`rec-${book.id}`} {...book} onRemoveBook={handleRemoveBook} />
+              ))*/}
+               <p className="col-span-full text-center text-muted-foreground">Recommendations will appear here.</p>
+            </div>
+          ) : (
+            <p className="text-center text-muted-foreground">No recommendations available yet. Add some books to your library!</p>
+          )}
         </section>
       </main>
 
       <AudioPlayer 
-        bookTitle="The Psychology of Money"
-        chapter="Chapter 5: Wealth vs Getting Rich"
+        audioSrc={currentAudio?.audioSrc}
+        bookTitle={currentAudio?.title || "No book selected"}
+        chapter={currentAudio ? currentAudio.author : "Unknown author"}
+        onTimeUpdate={handleAudioTimeUpdate}
+        initialProgressPercent={currentAudio?.progress}
       />
     </div>
   );
