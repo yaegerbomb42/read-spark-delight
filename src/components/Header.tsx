@@ -84,6 +84,10 @@ export function Header() {
               </AvatarFallback>
             </Avatar>
           </Link>
+          <Avatar className="h-8 w-8 cursor-pointer hover:ring-2 hover:ring-primary transition-all">
+            <AvatarImage src="" />
+            <AvatarFallback className="bg-dopamine-500 text-white">RD</AvatarFallback>
+          </Avatar>
         </div>
       </div>
     </header>
