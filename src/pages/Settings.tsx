@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { summarizeLibrary, recommendBook } from '@/lib/openai';
+import { Link } from 'react-router-dom';
 
 const SettingsPage: React.FC = () => {
   const [apiKey, setApiKey] = useState('');
@@ -38,6 +39,7 @@ const SettingsPage: React.FC = () => {
 
   return (
     <div className="container mx-auto p-4 space-y-4">
+      <Link to="/" className="text-sm text-blue-500 hover:underline">&larr; Home</Link>
       <h2 className="text-2xl font-bold">Settings</h2>
       <div className="space-y-2">
         <label className="text-sm font-medium">OpenAI API Key</label>
