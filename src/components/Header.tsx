@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from "react";
-import { Moon, Sun, Search, Bell } from "lucide-react";
+import { Moon, Sun, Search, Bell, Settings as SettingsIcon } from "lucide-react";
+import { Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
@@ -9,9 +10,15 @@ import { Badge } from "@/components/ui/badge";
 export function Header() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [mounted, setMounted] = useState(false);
+  const [name, setName] = useState('');
+  const [picture, setPicture] = useState('');
 
   useEffect(() => {
     setMounted(true);
+    const storedName = localStorage.getItem('profileName');
+    const storedPic = localStorage.getItem('profilePicture');
+    if (storedName) setName(storedName);
+    if (storedPic) setPicture(storedPic);
   }, []);
 
   useEffect(() => {
@@ -63,10 +70,20 @@ export function Header() {
             </Badge>
           </Button>
 
-          <Avatar className="h-8 w-8 cursor-pointer hover:ring-2 hover:ring-primary transition-all">
-            <AvatarImage src="" />
-            <AvatarFallback className="bg-dopamine-500 text-white">RD</AvatarFallback>
-          </Avatar>
+          <Button asChild variant="ghost" size="icon">
+            <Link to="/settings">
+              <SettingsIcon className="h-5 w-5" />
+            </Link>
+          </Button>
+
+          <Link to="/profile">
+            <Avatar className="h-8 w-8 cursor-pointer hover:ring-2 hover:ring-primary transition-all">
+              <AvatarImage src={picture} />
+              <AvatarFallback className="bg-dopamine-500 text-white">
+                {name ? name.charAt(0).toUpperCase() : 'RD'}
+              </AvatarFallback>
+            </Avatar>
+          </Link>
         </div>
       </div>
     </header>

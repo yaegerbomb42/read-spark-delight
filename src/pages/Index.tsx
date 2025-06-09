@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Headphones, Trophy } from "lucide-react";
 import type { Book } from "@/types"; // Updated import path
+import ChatBar from "@/components/ChatBar";
 
 // Removed recentBooks and recommendedBooks
 
@@ -239,13 +240,17 @@ const Index = () => {
               ))*/}
                <p className="col-span-full text-center text-muted-foreground">Recommendations will appear here.</p>
             </div>
-          ) : (
+        ) : (
             <p className="text-center text-muted-foreground">No recommendations available yet. Add some books to your library!</p>
           )}
         </section>
       </main>
 
-      <AudioPlayer 
+      <div className="container pb-6">
+        <ChatBar />
+      </div>
+
+      <AudioPlayer
         audioSrc={currentAudio?.audioSrc}
         bookTitle={currentAudio?.title || "No book selected"}
         chapter={currentAudio ? currentAudio.author : "Unknown author"}
