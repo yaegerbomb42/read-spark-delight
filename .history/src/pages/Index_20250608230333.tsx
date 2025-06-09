@@ -1,17 +1,15 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react"; // Added React, useState, useEffect
 import { Header } from "@/components/Header";
 import { BookCard } from "@/components/BookCard";
 import { ReaderStats } from "@/components/ReaderStats";
 import { AudioPlayer } from "@/components/AudioPlayer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ImportBookButton } from "@/components/ImportBookButton";
+import { ImportBookButton } from "@/components/ImportBookButton"; // Import the new component
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Headphones, Trophy } from "lucide-react";
-import type { Book } from "@/types";
-import { defaultBooks } from "@/lib/booksData";
-import ChatBar from "@/components/ChatBar";
+import type { Book } from "@/types"; // Updated import path
 
 // Removed recentBooks and recommendedBooks
 
@@ -123,23 +121,15 @@ const Index = () => {
     }
   };
 
-  // Load books from localStorage or use defaults
+  // Load books from localStorage on mount
   useEffect(() => {
     try {
       const storedBooks = localStorage.getItem('myBooks');
       if (storedBooks) {
-        // Merge stored books with defaults (prioritizing stored books)
-        const parsedBooks = JSON.parse(storedBooks);
-        const defaultBookIds = defaultBooks.map(b => b.id);
-        const uniqueDefaults = defaultBooks.filter(b => !parsedBooks.some((sb: Book) => sb.id === b.id));
-        setBooks([...parsedBooks, ...uniqueDefaults]);
-      } else {
-        setBooks(defaultBooks);
-        localStorage.setItem('myBooks', JSON.stringify(defaultBooks));
+        setBooks(JSON.parse(storedBooks));
       }
     } catch (error) {
       console.error("Failed to parse books from localStorage", error);
-      setBooks(defaultBooks); // Fallback to defaults if error occurs
     }
   }, []);
 
@@ -249,17 +239,13 @@ const Index = () => {
               ))*/}
                <p className="col-span-full text-center text-muted-foreground">Recommendations will appear here.</p>
             </div>
-        ) : (
+          ) : (
             <p className="text-center text-muted-foreground">No recommendations available yet. Add some books to your library!</p>
           )}
         </section>
       </main>
 
-      <div className="container pb-6">
-        <ChatBar />
-      </div>
-
-      <AudioPlayer
+      <AudioPlayer 
         audioSrc={currentAudio?.audioSrc}
         bookTitle={currentAudio?.title || "No book selected"}
         chapter={currentAudio ? currentAudio.author : "Unknown author"}
