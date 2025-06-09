@@ -1,5 +1,4 @@
 
-import { useState } from "react";
 import { 
   Tooltip,
   TooltipContent,
@@ -11,7 +10,6 @@ import { Trophy } from "lucide-react";
 type BadgeType = "gold" | "silver" | "bronze" | "locked";
 
 interface AchievementBadgeProps {
-  id: string;
   title: string;
   description: string;
   type: BadgeType;
@@ -22,7 +20,6 @@ interface AchievementBadgeProps {
 }
 
 export function AchievementBadge({
-  id,
   title,
   description,
   type,
@@ -31,7 +28,6 @@ export function AchievementBadge({
   icon,
   isNew = false,
 }: AchievementBadgeProps) {
-  const [showBadge, setShowBadge] = useState(true);
 
   const getBadgeColor = () => {
     switch (type) {

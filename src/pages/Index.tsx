@@ -1,5 +1,4 @@
 
-import { useState } from "react";
 import { Header } from "@/components/Header";
 import { BookCard } from "@/components/BookCard";
 import { ReaderStats } from "@/components/ReaderStats";
@@ -7,7 +6,7 @@ import { AudioPlayer } from "@/components/AudioPlayer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Headphones, Trophy, Clock } from "lucide-react";
+import { BookOpen, Headphones, Trophy } from "lucide-react";
 
 // Mock data - in real app would come from API/database
 const recentBooks = [
@@ -173,7 +172,6 @@ const achievements = [
 ];
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState("reading");
 
   return (
     <div className="flex flex-col min-h-screen pb-20">
@@ -181,7 +179,7 @@ const Index = () => {
       
       <main className="flex-1 container py-6">
         <section className="mb-8">
-          <Tabs defaultValue="reading" className="w-full" onValueChange={setActiveTab}>
+          <Tabs defaultValue="reading" className="w-full">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-bold">Your Books</h2>
               <TabsList>

@@ -18,20 +18,6 @@ export function ProgressBar({
   size = "md",
   animate = true,
 }: ProgressBarProps) {
-  const getBarClass = () => {
-    let classes = "";
-    
-    // Size variants
-    if (size === "sm") classes += "h-1.5 ";
-    else if (size === "md") classes += "h-2.5 ";
-    else if (size === "lg") classes += "h-3 ";
-    
-    // Color variants
-    if (colorVariant === "success") classes += "bg-green-500 ";
-    else if (colorVariant === "warning") classes += "bg-yellow-500 ";
-    
-    return classes;
-  };
 
   const getHeightClass = () => {
     if (size === "sm") return "h-1.5";

@@ -67,7 +67,8 @@ ChartContainer.displayName = "Chart"
 
 const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
   const colorConfig = Object.entries(config).filter(
-    ([_, config]) => config.theme || config.color
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    ([_keyInFilter, configValue]) => configValue.theme || configValue.color
   )
 
   if (!colorConfig.length) {
@@ -82,11 +83,11 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
             ([theme, prefix]) => `
 ${prefix} [data-chart=${id}] {
 ${colorConfig
-  .map(([key, itemConfig]) => {
+  .map(([_key, itemConfig]) => { // Assuming 'key' was the problematic '_'
     const color =
       itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ||
       itemConfig.color
-    return color ? `  --color-${key}: ${color};` : null
+    return color ? `  --color-${_key}: ${color};` : null
   })
   .join("\n")}
 }

@@ -9,10 +9,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Play, BookOpen, Headphones, Star } from "lucide-react";
+import { Play, Headphones, Star } from "lucide-react";
 
 interface BookCardProps {
-  id: string;
   title: string;
   author: string;
   coverUrl: string;
@@ -23,7 +22,6 @@ interface BookCardProps {
 }
 
 export function BookCard({ 
-  id, 
   title, 
   author, 
   coverUrl, 

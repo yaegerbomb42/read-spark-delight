@@ -1,5 +1,5 @@
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import {
   Play,
   Pause,
@@ -22,13 +22,13 @@ import {
 interface AudioPlayerProps {
   bookTitle?: string;
   chapter?: string;
-  onFinish?: () => void;
+  // onFinish?: () => void; // Removed as it's unused
 }
 
 export function AudioPlayer({
   bookTitle = "No book selected",
   chapter = "Chapter 1",
-  onFinish
+  // onFinish // Removed as it's unused
 }: AudioPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
