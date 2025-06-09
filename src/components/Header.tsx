@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from "react";
-import { Moon, Sun, Search, Bell } from "lucide-react";
+import { Moon, Sun, Search, Bell, Settings as SettingsIcon } from "lucide-react";
+import { Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
@@ -61,6 +62,12 @@ export function Header() {
             <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-secondary">
               3
             </Badge>
+          </Button>
+
+          <Button asChild variant="ghost" size="icon">
+            <Link to="/settings">
+              <SettingsIcon className="h-5 w-5" />
+            </Link>
           </Button>
 
           <Avatar className="h-8 w-8 cursor-pointer hover:ring-2 hover:ring-primary transition-all">

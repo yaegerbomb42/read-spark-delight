@@ -9,4 +9,8 @@ export interface Book {
   isAudiobook: boolean;
   content: string; // For text of e-books
   audioSrc?: string; // For audio file URL
+  currentPage?: number;
+  totalPages?: number;
+  readTimeMinutes?: number;
+  chapter?: number;
 }
