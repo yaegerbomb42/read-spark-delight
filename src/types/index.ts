@@ -9,4 +9,5 @@ export interface Book {
   isAudiobook: boolean;
   content: string; // For text of e-books
   audioSrc?: string; // For audio file URL
+  contentType?: 'text' | 'html'; // New field for content type
 }

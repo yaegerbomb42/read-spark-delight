@@ -108,7 +108,8 @@ export function BookCard(props: BookCardProps) { // Changed to accept props dire
                     console.log("onPlayAudioBook prop not provided for ID:", id);
                   }
                 } else {
-                  navigate(`/read/${id}`);
+                  // Pass the whole book object (props) as route state
+                  navigate(`/read/${id}`, { state: { book: props as BookType } });
                 }
               }}
             >
