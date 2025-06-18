@@ -1,13 +1,14 @@
 
 import { Award, BookOpen, Clock, Calendar } from "lucide-react";
-import { ProgressBar } from "./ProgressBar";
+import { Headphones, Award, BookOpen, Clock, Calendar } from "lucide-react"; // Added Headphones
+// Removed ProgressBar import as goals are removed
 import { AchievementBadge } from "./AchievementBadge";
 
 interface ReaderStatsProps {
-  dailyGoal: number;
-  weeklyGoal: number;
+  // dailyGoal and weeklyGoal removed
   booksCompleted: number;
   minutesRead: number;
+  minutesListened: number; // Added
   currentStreak: number;
   longestStreak: number;
   achievements: {
@@ -22,17 +23,17 @@ interface ReaderStatsProps {
 }
 
 export function ReaderStats({
-  dailyGoal,
-  weeklyGoal,
+  // dailyGoal and weeklyGoal removed
   booksCompleted,
   minutesRead,
+  minutesListened, // Added
   currentStreak,
   longestStreak,
   achievements
 }: ReaderStatsProps) {
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4"> {/* Adjusted grid for 5 items */}
         <div className="bg-card p-4 rounded-lg border shadow-sm">
           <div className="flex items-center gap-3 mb-2">
             <div className="bg-primary/10 p-2 rounded-full">
@@ -41,7 +42,7 @@ export function ReaderStats({
             <h3 className="font-medium">Books Completed</h3>
           </div>
           <p className="text-3xl font-bold">{booksCompleted}</p>
-          <p className="text-sm text-muted-foreground mt-1">+2 this month</p>
+          {/* <p className="text-sm text-muted-foreground mt-1">+2 this month</p> */} {/* Static text removed */}
         </div>
         
         <div className="bg-card p-4 rounded-lg border shadow-sm">
@@ -49,10 +50,21 @@ export function ReaderStats({
             <div className="bg-primary/10 p-2 rounded-full">
               <Clock className="h-5 w-5 text-primary" />
             </div>
-            <h3 className="font-medium">Reading Time</h3>
+            <h3 className="font-medium">Time (E-books)</h3>
           </div>
           <p className="text-3xl font-bold">{minutesRead} min</p>
-          <p className="text-sm text-muted-foreground mt-1">+45 min today</p>
+          {/* <p className="text-sm text-muted-foreground mt-1">+45 min today</p> */} {/* Static text removed */}
+        </div>
+
+        <div className="bg-card p-4 rounded-lg border shadow-sm">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="bg-primary/10 p-2 rounded-full">
+              <Headphones className="h-5 w-5 text-primary" />
+            </div>
+            <h3 className="font-medium">Time (Audio)</h3>
+          </div>
+          <p className="text-3xl font-bold">{minutesListened} min</p>
+          {/* <p className="text-sm text-muted-foreground mt-1">+30 min today</p> */} {/* Static text removed */}
         </div>
         
         <div className="bg-card p-4 rounded-lg border shadow-sm">
@@ -60,7 +72,7 @@ export function ReaderStats({
             <div className="bg-primary/10 p-2 rounded-full">
               <Calendar className="h-5 w-5 text-primary" />
             </div>
-            <h3 className="font-medium">Current Streak</h3>
+            <h3 className="font-medium">Activity Streak</h3>
           </div>
           <p className="text-3xl font-bold">{currentStreak} days</p>
           <p className="text-sm text-muted-foreground mt-1">Longest: {longestStreak} days</p>
@@ -75,39 +87,18 @@ export function ReaderStats({
           </div>
           <p className="text-3xl font-bold">{achievements.filter(a => a.type !== "locked").length}</p>
           <p className="text-sm text-muted-foreground mt-1">
-            {achievements.filter(a => a.type === "locked").length} more to unlock
+            {achievements.filter(a => a.type === "locked").length} more to unlock {/* Simplified: based on static data */}
           </p>
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-4">
-          <h3 className="font-semibold text-lg">Reading Goals</h3>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <ProgressBar 
-                value={dailyGoal} 
-                label="Daily Goal" 
-                colorVariant="success"
-                size="md"
-              />
-            </div>
-            <div className="space-y-2">
-              <ProgressBar 
-                value={weeklyGoal} 
-                label="Weekly Goal" 
-                colorVariant={weeklyGoal < 30 ? "warning" : "default"}
-                size="md"
-              />
-            </div>
-          </div>
-        </div>
-        
-        <div>
-          <h3 className="font-semibold text-lg mb-4">Latest Achievements</h3>
-          <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
-            {achievements.map(achievement => (
-              <AchievementBadge
+      {/* Reading Goals section removed */}
+
+      <div>
+        <h3 className="font-semibold text-lg mb-4">Achievements</h3> {/* Changed title from Latest Achievements */}
+        <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2"> {/* More responsive grid */}
+          {achievements.map(achievement => (
+            <AchievementBadge
                 key={achievement.id}
                 id={achievement.id}
                 title={achievement.title}

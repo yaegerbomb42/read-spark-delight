@@ -1,17 +1,17 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react"; // Added useRef
 import { Header } from "@/components/Header";
 import { BookCard } from "@/components/BookCard";
 import { ReaderStats } from "@/components/ReaderStats";
 import { AudioPlayer } from "@/components/AudioPlayer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ImportBookButton } from "@/components/ImportBookButton";
+import { ImportBookButton } from "@/components/ImportBookButton"; // Import the new component
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Headphones, Trophy } from "lucide-react";
 import type { Book } from "@/types";
-import { defaultBooks } from "@/lib/booksData";
-import ChatBar from "@/components/ChatBar";
+import { useStats } from "@/contexts/StatsContext"; // Import useStats
+// Removed UserStats and getCurrentDateYYYYMMDD imports as they are now in StatsContext
 
 // Removed recentBooks and recommendedBooks
 
@@ -94,15 +94,37 @@ const achievements = [ // Kept achievements as it's not part of this subtask's s
 const Index = () => {
   const [books, setBooks] = useState<Book[]>([]);
   const [currentAudio, setCurrentAudio] = useState<Book | null>(null);
+  const {
+    userStats,
+    recordUserActivity,
+    incrementMinutesListened,
+    markBookAsCompleted,
+    incrementTotalBooksImported, // Import new context function
+  } = useStats();
+
+  // Ref to track the last reported audio time for the current playing book
+  const lastReportedAudioTimeRef = useRef<{ bookId: string, time: number } | null>(null);
+
 
   const handleBookImported = (newBook: Book) => {
     setBooks(prevBooks => [...prevBooks, newBook]);
+    if (incrementTotalBooksImported) { // Check if function is available from context
+      incrementTotalBooksImported();
+    }
+    recordUserActivity();
   };
 
   const handleRemoveBook = (bookIdToRemove: string) => {
-    setBooks(prevBooks => prevBooks.filter(book => book.id !== bookIdToRemove));
+    setBooks(prevBooks => {
+      const bookToRemove = prevBooks.find(book => book.id === bookIdToRemove);
+      if (bookToRemove && bookToRemove.isAudiobook && bookToRemove.audioSrc && bookToRemove.audioSrc.startsWith('blob:')) {
+        URL.revokeObjectURL(bookToRemove.audioSrc);
+        // console.log("Revoked blob URL:", bookToRemove.audioSrc);
+      }
+      return prevBooks.filter(book => book.id !== bookIdToRemove);
+    });
     if (currentAudio?.id === bookIdToRemove) {
-      setCurrentAudio(null); // Clear current audio if it's the one being removed
+      setCurrentAudio(null);
     }
   };
 
@@ -110,48 +132,93 @@ const Index = () => {
     setCurrentAudio(book);
   };
 
-  const handleAudioTimeUpdate = (currentTime: number, duration: number) => {
+  const handleAudioTimeUpdate = (newCurrentTime: number, duration: number) => {
     if (currentAudio && duration > 0) {
-      const progress = (currentTime / duration) * 100;
+      const progress = (newCurrentTime / duration) * 100;
+
       setBooks(prevBooks =>
         prevBooks.map(b =>
           b.id === currentAudio.id ? { ...b, progress: Math.min(100, Math.max(0, progress)) } : b
         )
       );
-      // Note: This directly updates books state, which triggers localStorage save.
-      // For performance on very frequent updates, debouncing localStorage save might be considered.
+
+      let timeDeltaInSeconds = 0;
+      if (lastReportedAudioTimeRef.current && lastReportedAudioTimeRef.current.bookId === currentAudio.id) {
+        if (newCurrentTime > lastReportedAudioTimeRef.current.time) {
+          timeDeltaInSeconds = newCurrentTime - lastReportedAudioTimeRef.current.time;
+        }
+      } else if (newCurrentTime > 0) { // First time update for this book session with actual time
+        timeDeltaInSeconds = newCurrentTime; // Consider all time from 0 up to now as new
+      }
+
+      lastReportedAudioTimeRef.current = { bookId: currentAudio.id, time: newCurrentTime };
+
+      if (timeDeltaInSeconds > 0) {
+        incrementMinutesListened(timeDeltaInSeconds / 60);
+        // Only record general activity if substantial time has passed (e.g. > 5s to avoid too frequent calls)
+        // The existing recordUserActivity already checks for same-day activity.
+        // This check is more about "significant enough play to count as activity".
+        if (timeDeltaInSeconds > 5) { // Example: count as activity if more than 5s of new playback
+          recordUserActivity();
+        }
+      }
+
+      if (progress >= 100) {
+        markBookAsCompleted(currentAudio.id);
+      }
     }
   };
 
-  // Load books from localStorage or use defaults
+  // Effect to reset lastReportedAudioTimeRef when currentAudio changes
+  useEffect(() => {
+    if (currentAudio) {
+      // When a new audio book is selected, set its initial reported time based on its progress.
+      // This helps in calculating delta correctly from where it resumed.
+      const initialReportedTime = currentAudio.progress && currentAudio.audioSrcDuration // Assuming audioSrcDuration is available
+        ? (currentAudio.progress / 100) * currentAudio.audioSrcDuration
+        : 0;
+      lastReportedAudioTimeRef.current = { bookId: currentAudio.id, time: initialReportedTime };
+    } else {
+      lastReportedAudioTimeRef.current = null;
+    }
+  }, [currentAudio]);
+
+
+  // Load books from localStorage on mount
   useEffect(() => {
     try {
       const storedBooks = localStorage.getItem('myBooks');
       if (storedBooks) {
-        // Merge stored books with defaults (prioritizing stored books)
-        const parsedBooks = JSON.parse(storedBooks);
-        const defaultBookIds = defaultBooks.map(b => b.id);
-        const uniqueDefaults = defaultBooks.filter(b => !parsedBooks.some((sb: Book) => sb.id === b.id));
-        setBooks([...parsedBooks, ...uniqueDefaults]);
-      } else {
-        setBooks(defaultBooks);
-        localStorage.setItem('myBooks', JSON.stringify(defaultBooks));
+        setBooks(JSON.parse(storedBooks));
       }
     } catch (error) {
       console.error("Failed to parse books from localStorage", error);
-      setBooks(defaultBooks); // Fallback to defaults if error occurs
     }
   }, []);
 
   // Save books to localStorage when books state changes
   useEffect(() => {
-    // console.log("Saving books to localStorage", books); // For debugging
     try {
       localStorage.setItem('myBooks', JSON.stringify(books));
     } catch (error) {
       console.error("Failed to save books to localStorage", error);
     }
   }, [books]);
+
+  // Cleanup Blob URLs on component unmount
+  useEffect(() => {
+    // This effect now only depends on the `books` list for iterating at unmount.
+    // The `books` dependency means if the list changes, it re-evaluates, which is fine.
+    return () => {
+      const currentBooks = JSON.parse(localStorage.getItem('myBooks') || '[]') as Book[];
+      currentBooks.forEach(book => {
+        if (book.isAudiobook && book.audioSrc && book.audioSrc.startsWith('blob:')) {
+          URL.revokeObjectURL(book.audioSrc);
+          // console.log("Revoked blob URL on unmount for:", book.title);
+        }
+      });
+    };
+  }, []); // Empty dependency array: runs only on mount and unmount.
 
   return (
     <div className="flex flex-col min-h-screen pb-20">
@@ -217,14 +284,13 @@ const Index = () => {
             </TabsContent>
 
             <TabsContent value="stats" className="mt-2">
-              <ReaderStats 
-                dailyGoal={75}
-                weeklyGoal={28}
-                booksCompleted={12}
-                minutesRead={1345}
-                currentStreak={10}
-                longestStreak={15}
-                achievements={achievements}
+              <ReaderStats
+                booksCompleted={userStats.completedBookIds.length}
+                minutesRead={Math.round(userStats.totalMinutesRead)}
+                minutesListened={Math.round(userStats.totalMinutesListened)}
+                currentStreak={userStats.currentStreak}
+                longestStreak={userStats.longestStreak}
+                achievements={achievements} // Keep passing static achievements
               />
             </TabsContent>
           </Tabs>

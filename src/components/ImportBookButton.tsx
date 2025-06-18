@@ -1,12 +1,11 @@
 import React, { useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import type { Book } from '@/types';
-// Use explicit path to the ESM build of epubjs so Vite can resolve it
-import ePub from 'epubjs/dist/epub.js';
-import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist/build/pdf.mjs'; // Import from modern build
+import ePub from 'epubjs';
+import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist/build/pdf.mjs';
+import jsmediatags from 'jsmediatags'; // Import jsmediatags
 
 // Configure PDF.js worker
-// This path assumes the worker file is copied to the public root directory.
 GlobalWorkerOptions.workerSrc = '/pdf.worker.mjs';
 
 
@@ -167,8 +166,67 @@ export function ImportBookButton({ onBookImported }: ImportBookButtonProps) {
         }
       };
       reader.readAsArrayBuffer(file);
-    }
-     else {
+    } else if (['audio/mpeg', 'audio/mp3', 'audio/m4a', 'audio/mp4'].includes(file.type) ||
+               file.name.toLowerCase().endsWith(".mp3") ||
+               file.name.toLowerCase().endsWith(".m4a") ||
+               file.name.toLowerCase().endsWith(".m4b")) {
+
+      const createBookWithFallbacks = (fileObj: File, audioUrl: string, errorInfo?: any) => {
+        if (errorInfo) console.error("Error reading audio tags, using fallbacks:", errorInfo);
+        const fallbackTitle = fileObj.name.replace(/\.[^/.]+$/, "");
+        onBookImported({
+          id: Date.now().toString(),
+          title: fallbackTitle,
+          author: "Unknown Artist",
+          coverUrl: "/placeholder.svg",
+          progress: 0,
+          rating: 0,
+          tags: [],
+          isAudiobook: true,
+          content: errorInfo ? `Failed to read tags: ${errorInfo.type} ${errorInfo.info}` : "Audiobook",
+          audioSrc: audioUrl,
+          contentType: 'text',
+        });
+      };
+
+      const audioUrl = URL.createObjectURL(file);
+
+      jsmediatags.read(file, {
+        onSuccess: (tagData) => {
+          const tags = tagData.tags;
+          const title = tags.title || file.name.replace(/\.[^/.]+$/, "");
+          const author = tags.artist || "Unknown Artist";
+          let coverImageUrl = "/placeholder.svg";
+
+          if (tags.picture) {
+            const { data, format } = tags.picture;
+            let base64String = "";
+            for (let i = 0; i < data.length; i++) {
+              base64String += String.fromCharCode(data[i]);
+            }
+            coverImageUrl = `data:${format};base64,${window.btoa(base64String)}`;
+          }
+
+          const newBook: Book = {
+            id: Date.now().toString(),
+            title: title,
+            author: author,
+            coverUrl: coverImageUrl,
+            progress: 0,
+            rating: 0,
+            tags: tags.album ? [tags.album] : [],
+            isAudiobook: true,
+            content: tags.comment?.text || tags.lyrics?.lyrics || "", // Use comment or lyrics
+            audioSrc: audioUrl,
+            contentType: 'text',
+          };
+          onBookImported(newBook);
+        },
+        onError: (error) => {
+          createBookWithFallbacks(file, audioUrl, error);
+        }
+      });
+    } else {
       console.warn("Unsupported file type:", file.type || file.name);
       // TODO: Provide user feedback
     }
@@ -187,13 +245,13 @@ export function ImportBookButton({ onBookImported }: ImportBookButtonProps) {
     <>
       <input
         type="file"
-        accept=".txt,.epub,.pdf" // Updated accept attribute
+        accept=".txt,.epub,.pdf,.mp3,.m4a,.m4b" // Updated accept attribute
         ref={fileInputRef}
         onChange={handleFileChange}
         style={{ display: 'none' }}
       />
       <Button onClick={handleButtonClick} variant="outline">
-        Import Book (.txt, .epub, .pdf)
+        Import Book (.txt, .epub, .pdf, Audio)
       </Button>
     </>
   );

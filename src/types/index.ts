@@ -8,7 +8,16 @@ export interface Book {
   tags: string[];
   isAudiobook: boolean;
   content: string; // For text of e-books
-  contentUrl?: string; // URL to full content
   audioSrc?: string; // For audio file URL
-  contentType?: 'text' | 'html'; // New field for content type
+  contentType?: 'text' | 'html';
+}
+
+export interface UserStats {
+  totalBooksImported: number;
+  completedBookIds: string[]; // IDs of books where progress reached 100%
+  totalMinutesRead: number;    // Accumulated for text books
+  totalMinutesListened: number; // Accumulated for audiobooks
+  currentStreak: number;        // Consecutive days of any reading/listening activity
+  longestStreak: number;
+  lastReadingDate: string | null; // YYYY-MM-DD format
 }
