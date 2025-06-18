@@ -11,8 +11,4 @@ export interface Book {
   contentUrl?: string; // URL to full content
   audioSrc?: string; // For audio file URL
   contentType?: 'text' | 'html'; // New field for content type
-  currentPage?: number;
-  totalPages?: number;
-  readTimeMinutes?: number;
-  chapter?: number;
 }
