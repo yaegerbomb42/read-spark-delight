@@ -1,7 +1,8 @@
 import React, { useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import type { Book } from '@/types';
-import ePub from 'epubjs';
+// Use explicit path to the ESM build of epubjs so Vite can resolve it
+import ePub from 'epubjs/dist/epub.js';
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist/build/pdf.mjs'; // Import from modern build
 
 // Configure PDF.js worker

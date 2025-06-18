@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { BookOpen, Headphones, Trophy } from "lucide-react";
 import type { Book } from "@/types";
 import { defaultBooks } from "@/lib/booksData";
-import ChatBar from "@/components/ChatBar";
 
 // Removed recentBooks and recommendedBooks
 
@@ -255,7 +254,7 @@ const Index = () => {
         </section>
       </main>
 
-      <AudioPlayer
+      <AudioPlayer 
         audioSrc={currentAudio?.audioSrc}
         bookTitle={currentAudio?.title || "No book selected"}
         chapter={currentAudio ? currentAudio.author : "Unknown author"}

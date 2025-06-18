@@ -249,11 +249,15 @@ const Index = () => {
               ))*/}
                <p className="col-span-full text-center text-muted-foreground">Recommendations will appear here.</p>
             </div>
-          ) : (
+        ) : (
             <p className="text-center text-muted-foreground">No recommendations available yet. Add some books to your library!</p>
           )}
         </section>
       </main>
+
+      <div className="container pb-6">
+        <ChatBar />
+      </div>
 
       <AudioPlayer
         audioSrc={currentAudio?.audioSrc}

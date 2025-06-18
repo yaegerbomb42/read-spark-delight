@@ -1,17 +1,15 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react"; // Added React, useState, useEffect
 import { Header } from "@/components/Header";
 import { BookCard } from "@/components/BookCard";
 import { ReaderStats } from "@/components/ReaderStats";
 import { AudioPlayer } from "@/components/AudioPlayer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ImportBookButton } from "@/components/ImportBookButton";
+import { ImportBookButton } from "@/components/ImportBookButton"; // Import the new component
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Headphones, Trophy } from "lucide-react";
-import type { Book } from "@/types";
-import { defaultBooks } from "@/lib/booksData";
-import ChatBar from "@/components/ChatBar";
+import type { Book } from "@/types"; // Updated import path
 
 // Removed recentBooks and recommendedBooks
 
@@ -123,23 +121,86 @@ const Index = () => {
     }
   };
 
-  // Load books from localStorage or use defaults
+  // Load books from localStorage on mount
   useEffect(() => {
     try {
       const storedBooks = localStorage.getItem('myBooks');
       if (storedBooks) {
-        // Merge stored books with defaults (prioritizing stored books)
-        const parsedBooks = JSON.parse(storedBooks);
-        const defaultBookIds = defaultBooks.map(b => b.id);
-        const uniqueDefaults = defaultBooks.filter(b => !parsedBooks.some((sb: Book) => sb.id === b.id));
-        setBooks([...parsedBooks, ...uniqueDefaults]);
+        setBooks(JSON.parse(storedBooks));
       } else {
+        // Add default books if none exist
+        const defaultBooks: Book[] = [
+          {
+            id: '1',
+            title: 'Pride and Prejudice',
+            author: 'Jane Austen',
+            coverUrl: 'https://www.gutenberg.org/cache/epub/1342/pg1342.cover.medium.jpg',
+            progress: 0,
+            rating: 4,
+            tags: ['Classic', 'Romance', 'Fiction'],
+            isAudiobook: false,
+            content: 'https://www.gutenberg.org/ebooks/1342.txt.utf-8',
+            currentPage: 0,
+            totalPages: 432
+          },
+          {
+            id: '2',
+            title: 'Moby Dick',
+            author: 'Herman Melville',
+            coverUrl: 'https://www.gutenberg.org/cache/epub/2701/pg2701.cover.medium.jpg',
+            progress: 0,
+            rating: 4,
+            tags: ['Classic', 'Adventure', 'Fiction'],
+            isAudiobook: false,
+            content: 'https://www.gutenberg.org/ebooks/2701.txt.utf-8',
+            currentPage: 0,
+            totalPages: 635
+          },
+          {
+            id: '3',
+            title: 'The Adventures of Sherlock Holmes',
+            author: 'Arthur Conan Doyle',
+            coverUrl: 'https://www.gutenberg.org/cache/epub/1661/pg1661.cover.medium.jpg',
+            progress: 0,
+            rating: 5,
+            tags: ['Mystery', 'Detective', 'Short Stories'],
+            isAudiobook: false,
+            content: 'https://www.gutenberg.org/ebooks/1661.txt.utf-8',
+            currentPage: 0,
+            totalPages: 307
+          },
+          {
+            id: '4',
+            title: 'Alice\'s Adventures in Wonderland',
+            author: 'Lewis Carroll',
+            coverUrl: 'https://www.gutenberg.org/cache/epub/11/pg11.cover.medium.jpg',
+            progress: 0,
+            rating: 4,
+            tags: ['Fantasy', 'Children', 'Classic'],
+            isAudiobook: true,
+            content: '',
+            audioSrc: 'https://archive.org/download/alices_adventures_in_wonderland_librivox/alicesadventuresinwonderland_01_carroll.mp3',
+            readTimeMinutes: 0
+          },
+          {
+            id: '5',
+            title: 'The Raven',
+            author: 'Edgar Allan Poe',
+            coverUrl: 'https://www.gutenberg.org/cache/epub/17192/pg17192.cover.medium.jpg',
+            progress: 0,
+            rating: 5,
+            tags: ['Poetry', 'Horror', 'Short'],
+            isAudiobook: true,
+            content: '',
+            audioSrc: 'https://archive.org/download/raven_poe_librivox/raven_poe.mp3',
+            readTimeMinutes: 0
+          }
+        ];
         setBooks(defaultBooks);
         localStorage.setItem('myBooks', JSON.stringify(defaultBooks));
       }
     } catch (error) {
       console.error("Failed to parse books from localStorage", error);
-      setBooks(defaultBooks); // Fallback to defaults if error occurs
     }
   }, []);
 
@@ -255,7 +316,7 @@ const Index = () => {
         </section>
       </main>
 
-      <AudioPlayer
+      <AudioPlayer 
         audioSrc={currentAudio?.audioSrc}
         bookTitle={currentAudio?.title || "No book selected"}
         chapter={currentAudio ? currentAudio.author : "Unknown author"}
