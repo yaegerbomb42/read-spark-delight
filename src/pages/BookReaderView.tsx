@@ -3,14 +3,18 @@ import { useParams, Link, useLocation } from 'react-router-dom'; // Imported use
 import type { Book } from '@/types';
 import { useTTS } from '@/hooks/useTTS';
 import { Button } from '@/components/ui/button';
+import { useStats } from '@/contexts/StatsContext'; // Import useStats
 
-const BookReaderView: React.FC = () => {
+// Removed BookReaderViewProps interface and onActivity from props
+
+const BookReaderView: React.FC = () => { // Removed onActivity from props
   const { bookId } = useParams<{ bookId: string }>();
-  const location = useLocation(); // Get location object
+  const location = useLocation();
   const [book, setBook] = useState<Book | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { speak, pause, resume, cancel, isSpeaking, isPaused, isSupported } = useTTS();
+  const { recordUserActivity, incrementMinutesRead, markBookAsCompleted } = useStats(); // Use stats context
   const contentRef = useRef<HTMLDivElement>(null);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -21,19 +25,26 @@ const BookReaderView: React.FC = () => {
       if (scrollHeight - clientHeight <= 0) return; // Avoid division by zero if not scrollable
 
       const scrollPercentage = Math.min(100, Math.max(0, (scrollTop / (scrollHeight - clientHeight)) * 100));
+      const currentProgress = book.progress || 0;
 
-      try {
-        const storedBooks = localStorage.getItem('myBooks');
-        if (storedBooks) {
-          const booksArray: Book[] = JSON.parse(storedBooks);
-          const bookIndex = booksArray.findIndex(b => b.id === bookId);
-          if (bookIndex !== -1) {
-            booksArray[bookIndex].progress = scrollPercentage;
-            localStorage.setItem('myBooks', JSON.stringify(booksArray));
-            // console.log(`Scroll progress for ${book.title}: ${scrollPercentage.toFixed(2)}%`);
+      if (scrollPercentage > currentProgress + 1) { // Only save if progress increased by at least 1%
+        try {
+          const storedBooks = localStorage.getItem('myBooks');
+          if (storedBooks) {
+            const booksArray: Book[] = JSON.parse(storedBooks);
+            const bookIndex = booksArray.findIndex(b => b.id === bookId);
+            if (bookIndex !== -1) {
+              booksArray[bookIndex].progress = scrollPercentage;
+              localStorage.setItem('myBooks', JSON.stringify(booksArray));
+              recordUserActivity();
+              incrementMinutesRead(1); // Increment by 1 minute for simplicity per scroll save
+              if (scrollPercentage >= 100) {
+                markBookAsCompleted(book.id);
+              }
+              // console.log(`Scroll progress for ${book.title}: ${scrollPercentage.toFixed(2)}%`);
+            }
           }
-        }
-      } catch (err) {
+        } catch (err) {
         console.error("Failed to save scroll progress to localStorage", err);
       }
     }
