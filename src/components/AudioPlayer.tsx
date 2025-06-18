@@ -8,6 +8,7 @@ import {
   Volume2,
   Volume1,
   VolumeX,
+  Settings,
   RotateCcw // For reset/replay
 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
@@ -273,6 +274,10 @@ export function AudioPlayer({
             ))}
           </select>
 
+          {/* Settings button can be for future features like track selection, etc. */}
+          <Button variant="ghost" size="icon" className="h-8 w-8" disabled={isPlayerDisabled}>
+            <Settings className="h-4 w-4" />
+          </Button>
         </div>
       </div>
     </div>

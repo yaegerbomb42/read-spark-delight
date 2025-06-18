@@ -110,7 +110,6 @@ export function BookCard(props: BookCardProps) { // Changed to accept props dire
                 } else {
                   // Pass the whole book object (props) as route state
                   navigate(`/read/${id}`, { state: { book: props as BookType } });
-                  navigate(`/book/${id}`);
                 }
               }}
             >
