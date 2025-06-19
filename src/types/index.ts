@@ -21,3 +21,13 @@ export interface UserStats {
   longestStreak: number;
   lastReadingDate: string | null; // YYYY-MM-DD format
 }
+
+export interface Achievement {
+  id: string;
+  title: string;
+  description: string;
+  type: 'gold' | 'silver' | 'bronze' | 'locked';
+  progress?: number;
+  maxProgress?: number;
+  isNew?: boolean;
+}
