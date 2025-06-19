@@ -1,13 +1,10 @@
 import { Headphones, Award, BookOpen, Clock, Calendar } from "lucide-react";
-// Removed ProgressBar import as goals are removed
 import { AchievementBadge } from "./AchievementBadge";
 import { useStats } from "@/contexts/StatsContext";
 import { computeAchievements } from "@/lib/achievements";
-
 export function ReaderStats() {
   const { userStats } = useStats();
   const achievements = computeAchievements(userStats);
-
   const booksCompleted = userStats.completedBookIds.length;
   const minutesRead = Math.round(userStats.totalMinutesRead);
   const minutesListened = Math.round(userStats.totalMinutesListened);
