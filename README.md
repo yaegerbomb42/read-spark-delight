@@ -84,3 +84,13 @@ Yes it is!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+
+## Installing the app
+
+After building or visiting the deployed site you can install it as a Progressive Web App.
+
+- **Mobile (Android)**: Open the site in Chrome and choose **Add to Home screen** from the menu.
+- **Mobile (iOS)**: Open the site in Safari, tap the share icon, then select **Add to Home Screen**.
+- **Desktop**: In Chrome or Edge, click the install button in the address bar or open the browser menu and choose **Install app**.
+
+Once installed the app launches in its own window and can work offline after the first visit.
