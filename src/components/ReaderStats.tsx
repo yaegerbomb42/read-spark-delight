@@ -1,34 +1,18 @@
 import { Headphones, Award, BookOpen, Clock, Calendar } from "lucide-react";
 // Removed ProgressBar import as goals are removed
 import { AchievementBadge } from "./AchievementBadge";
+import { useStats } from "@/contexts/StatsContext";
+import { computeAchievements } from "@/lib/achievements";
 
-interface ReaderStatsProps {
-  // dailyGoal and weeklyGoal removed
-  booksCompleted: number;
-  minutesRead: number;
-  minutesListened: number; // Added
-  currentStreak: number;
-  longestStreak: number;
-  achievements: {
-    id: string;
-    title: string;
-    description: string;
-    type: "gold" | "silver" | "bronze" | "locked";
-    progress?: number;
-    maxProgress?: number;
-    isNew?: boolean;
-  }[];
-}
+export function ReaderStats() {
+  const { userStats } = useStats();
+  const achievements = computeAchievements(userStats);
 
-export function ReaderStats({
-  // dailyGoal and weeklyGoal removed
-  booksCompleted,
-  minutesRead,
-  minutesListened, // Added
-  currentStreak,
-  longestStreak,
-  achievements
-}: ReaderStatsProps) {
+  const booksCompleted = userStats.completedBookIds.length;
+  const minutesRead = Math.round(userStats.totalMinutesRead);
+  const minutesListened = Math.round(userStats.totalMinutesListened);
+  const currentStreak = userStats.currentStreak;
+  const longestStreak = userStats.longestStreak;
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4"> {/* Adjusted grid for 5 items */}

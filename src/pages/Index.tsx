@@ -15,81 +15,6 @@ import { useStats } from "@/contexts/StatsContext"; // Import useStats
 
 // Removed recentBooks and recommendedBooks
 
-const achievements = [ // Kept achievements as it's not part of this subtask's scope to remove
-  {
-    id: "a1",
-    title: "Bookworm",
-    description: "Read for 10 days in a row",
-    type: "gold" as const,
-    isNew: true,
-  },
-  {
-    id: "a2",
-    title: "Chapter Master",
-    description: "Complete 50 chapters",
-    type: "silver" as const,
-  },
-  {
-    id: "a3",
-    title: "Early Bird",
-    description: "Read before 7 AM for 5 days",
-    type: "bronze" as const,
-  },
-  {
-    id: "a4",
-    title: "Book Collector",
-    description: "Add 20 books to your library",
-    type: "bronze" as const,
-  },
-  {
-    id: "a5",
-    title: "Night Owl",
-    description: "Read after 10 PM for 7 days",
-    type: "locked" as const,
-    progress: 4,
-    maxProgress: 7,
-  },
-  {
-    id: "a6",
-    title: "Marathon Reader",
-    description: "Read for 3 hours straight",
-    type: "locked" as const,
-    progress: 90,
-    maxProgress: 180,
-  },
-  {
-    id: "a7",
-    title: "Critic",
-    description: "Leave reviews for 10 books",
-    type: "locked" as const,
-    progress: 3,
-    maxProgress: 10,
-  },
-  {
-    id: "a8",
-    title: "Genre Explorer",
-    description: "Read books from 5 different genres",
-    type: "locked" as const,
-    progress: 3,
-    maxProgress: 5,
-  },
-  {
-    id: "a9",
-    title: "Audiobook Enthusiast",
-    description: "Listen to 5 audiobooks",
-    type: "locked" as const,
-    progress: 2,
-    maxProgress: 5,
-  },
-  {
-    id: "a10",
-    title: "Social Reader",
-    description: "Share 3 quotes on social media",
-    type: "locked" as const,
-    progress: 0,
-    maxProgress: 3,
-  },
-];
 
 const Index = () => {
   const [books, setBooks] = useState<Book[]>([]);
@@ -328,14 +253,7 @@ const Index = () => {
             </TabsContent>
 
             <TabsContent value="stats" className="mt-2">
-              <ReaderStats
-                booksCompleted={userStats.completedBookIds.length}
-                minutesRead={Math.round(userStats.totalMinutesRead)}
-                minutesListened={Math.round(userStats.totalMinutesListened)}
-                currentStreak={userStats.currentStreak}
-                longestStreak={userStats.longestStreak}
-                achievements={achievements} // Keep passing static achievements
-              />
+              <ReaderStats />
             </TabsContent>
           </Tabs>
         </section>
