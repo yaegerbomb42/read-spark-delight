@@ -4,6 +4,7 @@ import type { Book } from '@/types';
 import { useTTS } from '@/hooks/useTTS';
 import { Button } from '@/components/ui/button';
 import { useStats } from '@/contexts/StatsContext'; // Import useStats
+import useReadingTimer from '@/hooks/useReadingTimer';
 
 // Removed BookReaderViewProps interface and onActivity from props
 
@@ -17,6 +18,12 @@ const BookReaderView: React.FC = () => { // Removed onActivity from props
   const { recordUserActivity, incrementMinutesRead, markBookAsCompleted } = useStats(); // Use stats context
   const contentRef = useRef<HTMLDivElement>(null);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Track active reading time and update stats
+  useReadingTimer(true, () => {
+    incrementMinutesRead(1);
+    recordUserActivity();
+  });
 
   // Function to save scroll progress
   const saveScrollProgress = () => {
