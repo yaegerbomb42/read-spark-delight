@@ -94,6 +94,7 @@ const achievements = [ // Kept achievements as it's not part of this subtask's s
 const Index = () => {
   const [books, setBooks] = useState<Book[]>([]);
   const [currentAudio, setCurrentAudio] = useState<Book | null>(null);
+  const [recommendedBooks, setRecommendedBooks] = useState<Book[]>([]);
   const {
     userStats,
     recordUserActivity,
@@ -205,6 +206,41 @@ const Index = () => {
     }
   }, [books]);
 
+  // Update recommended books whenever the library changes
+  useEffect(() => {
+    if (books.length === 0) {
+      setRecommendedBooks([]);
+      return;
+    }
+
+    const tagCounts: Record<string, number> = {};
+    books.forEach(book => {
+      book.tags.forEach(tag => {
+        tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+      });
+    });
+
+    const sortedTags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]);
+    let recs: Book[] = [];
+
+    if (sortedTags.length > 0) {
+      const topTag = sortedTags[0][0];
+      recs = books.filter(b => b.tags.includes(topTag));
+    }
+
+    if (recs.length < 4) {
+      const others = books.filter(b => !recs.includes(b));
+      const shuffled = [...others].sort(() => Math.random() - 0.5);
+      recs = [...recs, ...shuffled.slice(0, 4 - recs.length)];
+    }
+
+    if (recs.length > 4) {
+      recs = recs.sort(() => Math.random() - 0.5).slice(0, 4);
+    }
+
+    setRecommendedBooks(recs);
+  }, [books]);
+
   // Cleanup Blob URLs on component unmount
   useEffect(() => {
     // This effect now only depends on the `books` list for iterating at unmount.
@@ -305,15 +341,11 @@ const Index = () => {
               View all
             </Button>
           </div>
-          {/* Recommended books section - can be populated later or removed */}
-          {books.length > 0 ? (
+          {recommendedBooks.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-              {/* Placeholder: map over some recommended books if available or show empty state */}
-              {/* For now, let's show a few from the existing books as placeholders if any exist */}
-              {/* books.slice(0, 4).map((book) => (
+              {recommendedBooks.map((book) => (
                 <BookCard key={`rec-${book.id}`} {...book} onRemoveBook={handleRemoveBook} />
-              ))*/}
-               <p className="col-span-full text-center text-muted-foreground">Recommendations will appear here.</p>
+              ))}
             </div>
           ) : (
             <p className="text-center text-muted-foreground">No recommendations available yet. Add some books to your library!</p>
