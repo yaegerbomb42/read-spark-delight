@@ -27,6 +27,7 @@ interface AudioPlayerProps {
   onFinish?: () => void;
   onTimeUpdate?: (currentTime: number, duration: number) => void;
   initialProgressPercent?: number;
+  onDurationAvailable?: (duration: number) => void;
 }
 
 export function AudioPlayer({
@@ -36,6 +37,7 @@ export function AudioPlayer({
   onFinish,
   onTimeUpdate,
   initialProgressPercent,
+  onDurationAvailable,
 }: AudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -73,6 +75,9 @@ export function AudioPlayer({
         audio.currentTime = initialTime;
         setCurrentTime(initialTime); // Also update React state
       }
+      if (onDurationAvailable) {
+        onDurationAvailable(audio.duration);
+      }
     };
     const handleTimeUpdate = () => {
       setCurrentTime(audio.currentTime);
@@ -101,7 +106,7 @@ export function AudioPlayer({
       audio.removeEventListener("volumechange", handleVolumeChangeEv);
       audio.removeEventListener("ratechange", handleRateChange);
     };
-}, [onFinish, audioSrc]); // Added audioSrc to re-run if src changes and new listeners might be needed on a new object
+}, [onFinish, onDurationAvailable, audioSrc]); // Added audioSrc and callback deps
 
 
   const formatTime = (seconds: number) => {

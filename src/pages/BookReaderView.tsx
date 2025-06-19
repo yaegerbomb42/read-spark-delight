@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link, useLocation } from 'react-router-dom'; // Imported useLocation
 import type { Book } from '@/types';
 import { useTTS } from '@/hooks/useTTS';
@@ -18,6 +18,46 @@ const BookReaderView: React.FC = () => { // Removed onActivity from props
   const { recordUserActivity, incrementMinutesRead, markBookAsCompleted } = useStats(); // Use stats context
   const contentRef = useRef<HTMLDivElement>(null);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [sentences, setSentences] = useState<string[]>([]);
+  const [currentSentenceIndex, setCurrentSentenceIndex] = useState<number>(-1);
+  const sentenceStartsRef = useRef<number[]>([]);
+  const speechStartRef = useRef<number | null>(null);
+  const accumulatedSpeechMsRef = useRef<number>(0);
+
+  const handleBoundary = useCallback((e: SpeechSynthesisEvent) => {
+    const charIndex = e.charIndex;
+    const starts = sentenceStartsRef.current;
+    for (let i = starts.length - 1; i >= 0; i--) {
+      if (charIndex >= starts[i]) {
+        setCurrentSentenceIndex(i);
+        break;
+      }
+    }
+  }, []);
+
+  const handleStartOrResume = useCallback(() => {
+    speechStartRef.current = Date.now();
+  }, []);
+
+  const handlePause = useCallback(() => {
+    if (speechStartRef.current) {
+      accumulatedSpeechMsRef.current += Date.now() - speechStartRef.current;
+      speechStartRef.current = null;
+    }
+  }, []);
+
+  const finalizeSpeech = useCallback(() => {
+    if (speechStartRef.current) {
+      accumulatedSpeechMsRef.current += Date.now() - speechStartRef.current;
+      speechStartRef.current = null;
+    }
+    if (accumulatedSpeechMsRef.current > 0) {
+      incrementMinutesRead(accumulatedSpeechMsRef.current / 60000);
+      recordUserActivity();
+      accumulatedSpeechMsRef.current = 0;
+    }
+    setCurrentSentenceIndex(-1);
+  }, [incrementMinutesRead, recordUserActivity]);
 
   // Track active reading time and update stats
   useReadingTimer(true, () => {
@@ -97,6 +137,27 @@ const BookReaderView: React.FC = () => { // Removed onActivity from props
     }
   }, [bookId, cancel, isSpeaking, isPaused, location.state]); // Added location.state to dependency array
 
+  // Split book text into sentences for highlighting
+  useEffect(() => {
+    if (book) {
+      let textForProcessing = book.content;
+      if (book.contentType === 'html') {
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = book.content;
+        textForProcessing = tempDiv.textContent || tempDiv.innerText || '';
+      }
+      const split = textForProcessing.match(/[^.!?]+[.!?]+(?:\s|$)/g) || [textForProcessing];
+      setSentences(split);
+      const starts: number[] = [];
+      let idx = 0;
+      for (const s of split) {
+        starts.push(idx);
+        idx += s.length;
+      }
+      sentenceStartsRef.current = starts;
+    }
+  }, [book]);
+
   // Effect for restoring scroll position
   useEffect(() => {
     if (book && contentRef.current && book.progress > 0) {
@@ -139,8 +200,9 @@ const BookReaderView: React.FC = () => { // Removed onActivity from props
         clearTimeout(scrollTimeoutRef.current);
       }
       saveScrollProgress(); // Save one last time on unmount
-      if (isSpeaking || isPaused) { // Cancel TTS on unmount
+      if (isSpeaking || isPaused) {
         cancel();
+        finalizeSpeech();
       }
     };
   }, [book, saveScrollProgress, cancel, isSpeaking, isPaused]); // saveScrollProgress is memoized by useCallback if defined with it
@@ -188,9 +250,15 @@ const BookReaderView: React.FC = () => { // Removed onActivity from props
                   if (book.contentType === 'html') {
                     const tempDiv = document.createElement('div');
                     tempDiv.innerHTML = book.content;
-                    textForTTS = tempDiv.textContent || tempDiv.innerText || "";
+                    textForTTS = tempDiv.textContent || tempDiv.innerText || '';
                   }
-                  speak(textForTTS, 'en-US');
+                  speak(textForTTS, 'en-US', {
+                    onBoundary: handleBoundary,
+                    onStart: handleStartOrResume,
+                    onResume: handleStartOrResume,
+                    onPause: handlePause,
+                    onEnd: finalizeSpeech,
+                  });
                 }}
                 variant="outline"
               >
@@ -198,13 +266,37 @@ const BookReaderView: React.FC = () => { // Removed onActivity from props
               </Button>
             )}
             {isSpeaking && !isPaused && (
-              <Button onClick={pause} variant="outline">Pause</Button>
+              <Button
+                onClick={() => {
+                  pause();
+                  handlePause();
+                }}
+                variant="outline"
+              >
+                Pause
+              </Button>
             )}
             {isPaused && (
-              <Button onClick={resume} variant="outline">Resume</Button>
+              <Button
+                onClick={() => {
+                  handleStartOrResume();
+                  resume();
+                }}
+                variant="outline"
+              >
+                Resume
+              </Button>
             )}
             {(isSpeaking || isPaused) && (
-              <Button onClick={cancel} variant="destructive">Stop</Button>
+              <Button
+                onClick={() => {
+                  cancel();
+                  finalizeSpeech();
+                }}
+                variant="destructive"
+              >
+                Stop
+              </Button>
             )}
           </div>
         )}
@@ -235,10 +327,16 @@ const BookReaderView: React.FC = () => { // Removed onActivity from props
         {book.contentType === 'html' ? (
           <div dangerouslySetInnerHTML={{ __html: book.content }} />
         ) : (
-          // Fallback for 'text' or undefined contentType
-          book.content.split('\n').map((paragraph, index) => (
-            <p key={index} className="mb-4">{paragraph || <>&nbsp;</>}</p>
-          ))
+          <div className="whitespace-pre-wrap">
+            {sentences.map((s, i) => (
+              <span
+                key={i}
+                className={i === currentSentenceIndex ? 'bg-yellow-200' : undefined}
+              >
+                {s}
+              </span>
+            ))}
+          </div>
         )}
       </div>
     </div>

@@ -5,7 +5,6 @@ import { computeAchievements } from "@/lib/achievements";
 export function ReaderStats() {
   const { userStats } = useStats();
   const achievements = computeAchievements(userStats);
-
   const booksCompleted = userStats.completedBookIds.length;
   const minutesRead = Math.round(userStats.totalMinutesRead);
   const minutesListened = Math.round(userStats.totalMinutesListened);
