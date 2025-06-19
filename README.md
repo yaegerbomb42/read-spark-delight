@@ -60,6 +60,19 @@ This project is built with:
 - shadcn-ui
 - Tailwind CSS
 
+## Supported Book Types
+
+You can import books in the following formats:
+
+- `.txt`
+- `.epub`
+- `.pdf`
+- `.mp3`
+- `.m4a`
+- `.m4b`
+
+Books with Digital Rights Management (DRM) or other encryption are not supported.
+
 ## How can I deploy this project?
 
 Simply open [Lovable](https://lovable.dev/projects/56561f21-2ba6-49d6-bcad-661ce65fa793) and click on Share -> Publish.
