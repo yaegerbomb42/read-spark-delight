@@ -1,6 +1,4 @@
-
-import { Award, BookOpen, Clock, Calendar } from "lucide-react";
-import { Headphones, Award, BookOpen, Clock, Calendar } from "lucide-react"; // Added Headphones
+import { Headphones, Award, BookOpen, Clock, Calendar } from "lucide-react";
 // Removed ProgressBar import as goals are removed
 import { AchievementBadge } from "./AchievementBadge";
 
@@ -97,21 +95,20 @@ export function ReaderStats({
       <div>
         <h3 className="font-semibold text-lg mb-4">Achievements</h3> {/* Changed title from Latest Achievements */}
         <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2"> {/* More responsive grid */}
-          {achievements.map(achievement => (
+          {achievements.map((achievement) => (
             <AchievementBadge
-                key={achievement.id}
-                id={achievement.id}
-                title={achievement.title}
-                description={achievement.description}
-                type={achievement.type}
-                progress={achievement.progress}
-                maxProgress={achievement.maxProgress}
-                isNew={achievement.isNew}
-              />
-            ))}
+              key={achievement.id}
+              id={achievement.id}
+              title={achievement.title}
+              description={achievement.description}
+              type={achievement.type}
+              progress={achievement.progress}
+              maxProgress={achievement.maxProgress}
+              isNew={achievement.isNew}
+            />
+          ))}
           </div>
         </div>
       </div>
-    </div>
   );
 }
