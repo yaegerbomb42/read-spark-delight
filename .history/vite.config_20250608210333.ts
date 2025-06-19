@@ -22,9 +22,4 @@ export default defineConfig(() => ({ // Removed 'command'
     host: '0.0.0.0', // Listen on all IPv4 addresses
     port: 4173,      // Default preview port, can be kept or changed
   },
-  build: {
-    commonjsOptions: {
-      include: [/node_modules/],
-    },
-  },
 }));
