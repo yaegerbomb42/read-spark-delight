@@ -8,6 +8,29 @@ import jsmediatags from 'jsmediatags'; // Import jsmediatags
 // Configure PDF.js worker
 GlobalWorkerOptions.workerSrc = '/pdf.worker.mjs';
 
+// Utility to get duration of an audio file
+const getAudioDuration = (url: string): Promise<number> => {
+  return new Promise((resolve) => {
+    const audio = document.createElement('audio');
+    const cleanup = () => {
+      audio.removeEventListener('loadedmetadata', onLoaded);
+      audio.removeEventListener('error', onError);
+    };
+    const onLoaded = () => {
+      cleanup();
+      resolve(isNaN(audio.duration) ? 0 : audio.duration);
+    };
+    const onError = () => {
+      cleanup();
+      resolve(0);
+    };
+    audio.addEventListener('loadedmetadata', onLoaded);
+    audio.addEventListener('error', onError);
+    audio.preload = 'metadata';
+    audio.src = url;
+  });
+};
+
 
 interface ImportBookButtonProps {
   onBookImported: (book: Book) => void;
@@ -171,7 +194,7 @@ export function ImportBookButton({ onBookImported }: ImportBookButtonProps) {
                file.name.toLowerCase().endsWith(".m4a") ||
                file.name.toLowerCase().endsWith(".m4b")) {
 
-      const createBookWithFallbacks = (fileObj: File, audioUrl: string, errorInfo?: any) => {
+      const createBookWithFallbacks = (fileObj: File, audioUrl: string, duration: number, errorInfo?: any) => {
         if (errorInfo) console.error("Error reading audio tags, using fallbacks:", errorInfo);
         const fallbackTitle = fileObj.name.replace(/\.[^/.]+$/, "");
         onBookImported({
@@ -185,11 +208,13 @@ export function ImportBookButton({ onBookImported }: ImportBookButtonProps) {
           isAudiobook: true,
           content: errorInfo ? `Failed to read tags: ${errorInfo.type} ${errorInfo.info}` : "Audiobook",
           audioSrc: audioUrl,
+          audioSrcDuration: duration,
           contentType: 'text',
         });
       };
 
       const audioUrl = URL.createObjectURL(file);
+      const duration = await getAudioDuration(audioUrl);
 
       jsmediatags.read(file, {
         onSuccess: (tagData) => {
@@ -218,12 +243,13 @@ export function ImportBookButton({ onBookImported }: ImportBookButtonProps) {
             isAudiobook: true,
             content: tags.comment?.text || tags.lyrics?.lyrics || "", // Use comment or lyrics
             audioSrc: audioUrl,
+            audioSrcDuration: duration,
             contentType: 'text',
           };
           onBookImported(newBook);
         },
         onError: (error) => {
-          createBookWithFallbacks(file, audioUrl, error);
+          createBookWithFallbacks(file, audioUrl, duration, error);
         }
       });
     } else {
