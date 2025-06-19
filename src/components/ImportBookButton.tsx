@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
 import type { Book } from '@/types';
 import ePub from 'epubjs';
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist/build/pdf.mjs';
@@ -15,6 +16,7 @@ interface ImportBookButtonProps {
 
 export function ImportBookButton({ onBookImported }: ImportBookButtonProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -110,7 +112,11 @@ export function ImportBookButton({ onBookImported }: ImportBookButtonProps) {
 
         } catch (epubError) {
           console.error("Error parsing EPUB:", epubError);
-          // TODO: Provide user feedback about failed EPUB import
+          toast({
+            variant: "destructive",
+            title: "Failed to import EPUB",
+            description: "The selected EPUB file could not be processed."
+          });
         }
       };
       reader.readAsArrayBuffer(file);
@@ -162,7 +168,11 @@ export function ImportBookButton({ onBookImported }: ImportBookButtonProps) {
 
         } catch (pdfError) {
           console.error("Error parsing PDF:", pdfError);
-          // TODO: Provide user feedback about failed PDF import
+          toast({
+            variant: "destructive",
+            title: "Failed to import PDF",
+            description: "The selected PDF file could not be processed."
+          });
         }
       };
       reader.readAsArrayBuffer(file);
@@ -228,7 +238,11 @@ export function ImportBookButton({ onBookImported }: ImportBookButtonProps) {
       });
     } else {
       console.warn("Unsupported file type:", file.type || file.name);
-      // TODO: Provide user feedback
+      toast({
+        variant: "destructive",
+        title: "Unsupported file type",
+        description: "This file type is not supported."
+      });
     }
 
     // Reset file input value to allow importing the same file again
