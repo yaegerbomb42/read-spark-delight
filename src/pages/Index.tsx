@@ -132,6 +132,14 @@ const Index = () => {
     setCurrentAudio(book);
   };
 
+  const handleAudioDurationAvailable = (duration: number) => {
+    if (!currentAudio) return;
+    setBooks(prevBooks => prevBooks.map(b => b.id === currentAudio.id ? { ...b, audioSrcDuration: duration } : b));
+    setCurrentAudio(prev => prev ? { ...prev, audioSrcDuration: duration } : prev);
+    const initialReportedTime = currentAudio.progress ? (currentAudio.progress / 100) * duration : 0;
+    lastReportedAudioTimeRef.current = { bookId: currentAudio.id, time: initialReportedTime };
+  };
+
   const handleAudioTimeUpdate = (newCurrentTime: number, duration: number) => {
     if (currentAudio && duration > 0) {
       const progress = (newCurrentTime / duration) * 100;
@@ -174,7 +182,7 @@ const Index = () => {
     if (currentAudio) {
       // When a new audio book is selected, set its initial reported time based on its progress.
       // This helps in calculating delta correctly from where it resumed.
-      const initialReportedTime = currentAudio.progress && currentAudio.audioSrcDuration // Assuming audioSrcDuration is available
+      const initialReportedTime = currentAudio.progress && currentAudio.audioSrcDuration
         ? (currentAudio.progress / 100) * currentAudio.audioSrcDuration
         : 0;
       lastReportedAudioTimeRef.current = { bookId: currentAudio.id, time: initialReportedTime };
@@ -326,6 +334,7 @@ const Index = () => {
         bookTitle={currentAudio?.title || "No book selected"}
         chapter={currentAudio ? currentAudio.author : "Unknown author"}
         onTimeUpdate={handleAudioTimeUpdate}
+        onDurationAvailable={handleAudioDurationAvailable}
         initialProgressPercent={currentAudio?.progress}
       />
     </div>
