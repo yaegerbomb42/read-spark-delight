@@ -45,7 +45,15 @@ export function useTTS() {
 
   // Removed handleStateUpdate as utterance events now directly set state.
 
-  const speak = useCallback((text: string, lang: string = 'en-US') => {
+  interface SpeakOptions {
+    onBoundary?: (event: SpeechSynthesisEvent) => void;
+    onStart?: () => void;
+    onEnd?: () => void;
+    onPause?: () => void;
+    onResume?: () => void;
+  }
+
+  const speak = useCallback((text: string, lang: string = 'en-US', options?: SpeakOptions) => {
     if (!synthRef.current || !isSupported) {
       console.error("SpeechSynthesis is not initialized or supported.");
       return;
@@ -69,22 +77,26 @@ export function useTTS() {
       console.log("TTS started");
       setIsSpeaking(true);
       setIsPaused(false);
+      options?.onStart?.();
     };
     utterance.onend = () => {
       console.log("TTS ended");
       setIsSpeaking(false);
       setIsPaused(false);
       currentUtteranceRef.current = null;
+      options?.onEnd?.();
     };
     utterance.onpause = () => {
       console.log("TTS paused");
       setIsSpeaking(true); // Still "speaking" in the sense that it's active but paused
       setIsPaused(true);
+      options?.onPause?.();
     };
     utterance.onresume = () => {
       console.log("TTS resumed");
       setIsSpeaking(true);
       setIsPaused(false);
+      options?.onResume?.();
     };
     utterance.onerror = (event) => {
       console.error("SpeechSynthesisUtterance.onerror", event);
@@ -92,6 +104,9 @@ export function useTTS() {
       setIsPaused(false);
       currentUtteranceRef.current = null;
     };
+    if (options?.onBoundary) {
+      utterance.onboundary = options.onBoundary;
+    }
 
     currentUtteranceRef.current = utterance;
     synthRef.current.speak(utterance);
