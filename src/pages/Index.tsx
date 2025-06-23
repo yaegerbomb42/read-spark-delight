@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { BookOpen, Headphones, Trophy } from "lucide-react";
 import type { Book } from "@/types";
 import { useStats } from "@/contexts/StatsContext"; // Import useStats
+import { defaultBooksData, getDefaultBookContentPath } from "@/lib/defaultBooks"; // Import default books
+
 // Removed UserStats and getCurrentDateYYYYMMDD imports as they are now in StatsContext
 
 // Removed recentBooks and recommendedBooks
@@ -118,24 +120,78 @@ const Index = () => {
   }, [currentAudio]);
 
 
-  // Load books from localStorage on mount
+  // Load books from localStorage on mount, or load default books if none found
   useEffect(() => {
-    try {
-      const storedBooks = localStorage.getItem('myBooks');
-      if (storedBooks) {
-        setBooks(JSON.parse(storedBooks));
+    const loadBooks = async () => {
+      try {
+        const storedBooksRaw = localStorage.getItem('myBooks');
+        const defaultBooksAlreadyLoaded = localStorage.getItem('defaultBooksLoaded') === 'true';
+
+        if (storedBooksRaw && storedBooksRaw !== '[]') {
+          // If books exist in localStorage, parse and use them.
+          // Also ensure defaultBooksLoaded flag is true if it wasn't already.
+          // This handles cases where user might have old books but not the flag.
+          setBooks(JSON.parse(storedBooksRaw));
+          if (!defaultBooksAlreadyLoaded) {
+            localStorage.setItem('defaultBooksLoaded', 'true');
+          }
+        } else if (!defaultBooksAlreadyLoaded) {
+          // No books in localStorage AND default books haven't been loaded yet.
+          console.log("Loading default books for the first time...");
+          const booksWithContent: Book[] = [];
+          for (const bookData of defaultBooksData) {
+            const contentPath = getDefaultBookContentPath(bookData.id);
+            let content = "Error loading content.";
+            if (contentPath) {
+              try {
+                const response = await fetch(contentPath); // Assumes files are in public folder
+                if (response.ok) {
+                  content = await response.text();
+                } else {
+                  console.error(`Failed to fetch content for ${bookData.title} from ${contentPath}`);
+                }
+              } catch (fetchError) {
+                console.error(`Error fetching content for ${bookData.title}:`, fetchError);
+              }
+            }
+            booksWithContent.push({ ...bookData, content });
+          }
+          setBooks(booksWithContent);
+          localStorage.setItem('myBooks', JSON.stringify(booksWithContent));
+          localStorage.setItem('defaultBooksLoaded', 'true');
+          // Update stats for imported books
+          if (incrementTotalBooksImported && typeof userStats.totalBooksImported === 'number') {
+             // Call incrementTotalBooksImported for each default book added
+             for (let i = 0; i < booksWithContent.length; i++) {
+                incrementTotalBooksImported();
+             }
+          }
+        } else {
+          // Default books were loaded in the past (flag is true), but current localStorage is empty or '[]'.
+          // This means the user likely cleared their books. Respect this and show an empty library.
+          setBooks([]);
+        }
+      } catch (error) {
+        console.error("Failed to parse books from localStorage or load default books", error);
+        setBooks([]); // Fallback to empty array on error
       }
-    } catch (error) {
-      console.error("Failed to parse books from localStorage", error);
-    }
-  }, []);
+    };
+
+    loadBooks();
+  }, [incrementTotalBooksImported, userStats.totalBooksImported]); // Added userStats.totalBooksImported
 
   // Save books to localStorage when books state changes
   useEffect(() => {
-    try {
-      localStorage.setItem('myBooks', JSON.stringify(books));
-    } catch (error) {
-      console.error("Failed to save books to localStorage", error);
+    // Only save if books array is not empty or if default books have been loaded
+    // This prevents overwriting an intentionally cleared localStorage with an empty array
+    // before default books are loaded for the first time.
+    const defaultBooksLoaded = localStorage.getItem('defaultBooksLoaded') === 'true';
+    if (books.length > 0 || defaultBooksLoaded) {
+        try {
+            localStorage.setItem('myBooks', JSON.stringify(books));
+        } catch (error) {
+            console.error("Failed to save books to localStorage", error);
+        }
     }
   }, [books]);
 

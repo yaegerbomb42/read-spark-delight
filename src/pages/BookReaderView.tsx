@@ -327,7 +327,7 @@ const BookReaderView: React.FC = () => { // Removed onActivity from props
         {book.contentType === 'html' ? (
           <div dangerouslySetInnerHTML={{ __html: book.content }} />
         ) : (
-          <div className="whitespace-pre-wrap">
+          <div className={book.contentType === 'text' ? "whitespace-pre-line" : "whitespace-pre-wrap"}>
             {sentences.map((s, i) => (
               <span
                 key={i}
