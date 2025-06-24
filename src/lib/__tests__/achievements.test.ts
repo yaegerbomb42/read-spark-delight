@@ -21,6 +21,8 @@ describe('computeAchievements', () => {
 
     const streakAchievement = result.find(a => a.id === 'streak-7');
     expect(streakAchievement?.type).toBe('gold');
+  });
+
   it('locks achievements when progress is low', () => {
     const stats: UserStats = {
       totalBooksImported: 0,
