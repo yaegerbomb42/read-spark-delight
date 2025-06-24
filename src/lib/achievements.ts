@@ -1,4 +1,3 @@
-
 import type { UserStats, Achievement } from '@/types';
 
 interface AchievementDefinition {
@@ -10,7 +9,7 @@ interface AchievementDefinition {
   getProgress: (stats: UserStats) => number;
 }
 
-const definitions: AchievementDefinition[] = [
+export const achievementDefinitions: AchievementDefinition[] = [
   {
     id: 'import-5-books',
     title: 'Book Collector',
@@ -59,73 +58,50 @@ const definitions: AchievementDefinition[] = [
     maxProgress: 7,
     getProgress: stats => stats.longestStreak,
   },
-];
-
-export function computeAchievements(stats: UserStats): Achievement[] {
-  return definitions.map(def => {
-    const progress = def.getProgress(stats);
-    const completed = progress >= def.maxProgress;
-  getProgress: (stats: import('../types').UserStats) => { progress: number; max: number };
-}
-
-export const achievementDefinitions: AchievementDefinition[] = [
   {
     id: 'streak_10',
     title: 'Bookworm',
     description: 'Maintain a 10 day reading streak',
     type: 'gold',
-    getProgress: stats => ({ progress: stats.currentStreak, max: 10 }),
+    maxProgress: 10,
+    getProgress: stats => stats.currentStreak,
   },
   {
     id: 'minutes_300',
     title: 'Marathon Reader',
     description: 'Read for 300 minutes',
     type: 'silver',
-    getProgress: stats => ({ progress: stats.totalMinutesRead, max: 300 }),
+    maxProgress: 300,
+    getProgress: stats => stats.totalMinutesRead,
   },
   {
     id: 'books_5',
     title: 'Finisher',
     description: 'Finish 5 books',
     type: 'bronze',
-    getProgress: stats => ({ progress: stats.completedBookIds.length, max: 5 }),
+    maxProgress: 5,
+    getProgress: stats => stats.completedBookIds.length,
   },
   {
     id: 'import_10',
     title: 'Collector',
     description: 'Import 10 books',
     type: 'bronze',
-    getProgress: stats => ({ progress: stats.totalBooksImported, max: 10 }),
+    maxProgress: 10,
+    getProgress: stats => stats.totalBooksImported,
   },
 ];
 
-export interface Achievement {
-  id: string;
-  title: string;
-  description: string;
-  type: 'gold' | 'silver' | 'bronze' | 'locked';
-  progress?: number;
-  maxProgress?: number;
-}
-
-export function computeAchievements(stats: import('../types').UserStats): Achievement[] {
+export function computeAchievements(stats: UserStats): Achievement[] {
   return achievementDefinitions.map(def => {
-    const { progress, max } = def.getProgress(stats);
-    const unlocked = progress >= max;
+    const progress = def.getProgress(stats);
+    const unlocked = progress >= def.maxProgress;
     return {
       id: def.id,
       title: def.title,
       description: def.description,
-      type: completed ? def.type : 'locked',
-      progress: completed ? undefined : progress,
-      maxProgress: completed ? undefined : def.maxProgress,
-    } as Achievement;
-  });
-}
-
-export { definitions as achievementDefinitions };
       type: unlocked ? def.type : 'locked',
-      ...(unlocked ? {} : { progress, maxProgress: max }),
-    };
+      ...(unlocked ? {} : { progress, maxProgress: def.maxProgress }),
+    } as Achievement;
   });
 }
