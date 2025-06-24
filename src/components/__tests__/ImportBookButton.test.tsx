@@ -7,7 +7,6 @@ vi.mock('pdfjs-dist/build/pdf.mjs', () => ({
   getDocument: vi.fn(),
   GlobalWorkerOptions: {},
 }));
-vi.mock('jsmediatags', () => ({ default: { read: vi.fn() } }));
 
 describe('ImportBookButton', () => {
   it('imports plain text files', async () => {
