@@ -4,7 +4,6 @@ import { useToast } from '@/components/ui/use-toast';
 import type { Book } from '@/types';
 import ePub from 'epubjs';
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist/build/pdf.mjs';
-import jsmediatags from 'jsmediatags'; // Import jsmediatags
 
 // Configure PDF.js worker
 GlobalWorkerOptions.workerSrc = '/pdf.worker.mjs';
@@ -226,42 +225,8 @@ export function ImportBookButton({ onBookImported }: ImportBookButtonProps) {
       const audioUrl = URL.createObjectURL(file);
       const duration = await getAudioDuration(audioUrl);
 
-      jsmediatags.read(file, {
-        onSuccess: (tagData) => {
-          const tags = tagData.tags;
-          const title = tags.title || file.name.replace(/\.[^/.]+$/, "");
-          const author = tags.artist || "Unknown Artist";
-          let coverImageUrl = "/placeholder.svg";
-
-          if (tags.picture) {
-            const { data, format } = tags.picture;
-            let base64String = "";
-            for (let i = 0; i < data.length; i++) {
-              base64String += String.fromCharCode(data[i]);
-            }
-            coverImageUrl = `data:${format};base64,${window.btoa(base64String)}`;
-          }
-
-          const newBook: Book = {
-            id: Date.now().toString(),
-            title: title,
-            author: author,
-            coverUrl: coverImageUrl,
-            progress: 0,
-            rating: 0,
-            tags: tags.album ? [tags.album] : [],
-            isAudiobook: true,
-            content: tags.comment?.text || tags.lyrics?.lyrics || "", // Use comment or lyrics
-            audioSrc: audioUrl,
-            audioSrcDuration: duration,
-            contentType: 'text',
-          };
-          onBookImported(newBook);
-        },
-        onError: (error) => {
-          createBookWithFallbacks(file, audioUrl, duration, error);
-        }
-      });
+      // Use filename and defaults when metadata cannot be parsed
+      createBookWithFallbacks(file, audioUrl, duration);
     } else {
       console.warn("Unsupported file type:", file.type || file.name);
       toast({
