@@ -6,7 +6,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 
-export function Header() {
+interface HeaderProps {
+  searchQuery?: string;
+  onSearchChange?: (value: string) => void;
+}
+export function Header({ searchQuery = "", onSearchChange }: HeaderProps) {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [mounted, setMounted] = useState(false);
 
@@ -45,10 +49,12 @@ export function Header() {
 
         <div className="relative hidden md:flex items-center w-1/3">
           <Search className="absolute left-3 h-4 w-4 text-muted-foreground" />
-          <Input 
-            type="search" 
-            placeholder="Search books..." 
+          <Input
+            type="search"
+            placeholder="Search books..."
             className="pl-10"
+            value={searchQuery}
+            onChange={(e) => onSearchChange?.(e.target.value)}
           />
         </div>
 

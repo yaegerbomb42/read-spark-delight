@@ -32,3 +32,10 @@ export interface Achievement {
   maxProgress?: number;
   isNew?: boolean;
 }
+
+export interface Note {
+  id: string;
+  bookId: string;
+  text: string;
+  createdAt: string; // ISO date string
+}
