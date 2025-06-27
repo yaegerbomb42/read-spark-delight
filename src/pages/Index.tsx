@@ -12,6 +12,7 @@ import { BookOpen, Headphones, Trophy } from "lucide-react";
 import type { Book } from "@/types";
 import { useStats } from "@/contexts/StatsContext"; // Import useStats
 import { defaultBooksData, getDefaultBookContentPath } from "@/lib/defaultBooks"; // Import default books
+import { useDebounce } from "@/hooks/useDebounce";
 
 // Removed UserStats and getCurrentDateYYYYMMDD imports as they are now in StatsContext
 
@@ -22,6 +23,8 @@ const Index = () => {
   const [books, setBooks] = useState<Book[]>([]);
   const [currentAudio, setCurrentAudio] = useState<Book | null>(null);
   const [recommendedBooks, setRecommendedBooks] = useState<Book[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const debouncedQuery = useDebounce(searchQuery, 300);
   const {
     userStats,
     recordUserActivity,
@@ -245,9 +248,15 @@ const Index = () => {
     };
   }, []); // Empty dependency array: runs only on mount and unmount.
 
+  const filteredBooks = books.filter(b =>
+    b.title.toLowerCase().includes(debouncedQuery.toLowerCase()) ||
+    b.author.toLowerCase().includes(debouncedQuery.toLowerCase())
+  );
+  const booksToShow = debouncedQuery ? filteredBooks : books;
+
   return (
     <div className="flex flex-col min-h-screen pb-20">
-      <Header />
+      <Header searchQuery={searchQuery} onSearchChange={setSearchQuery} />
       
       <main className="flex-1 container py-6">
         <section className="mb-8">
@@ -275,11 +284,11 @@ const Index = () => {
 
             <TabsContent value="reading" className="space-y-6 mt-2">
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-                {books.filter(book => !book.isAudiobook).map((book) => (
+                {booksToShow.filter(book => !book.isAudiobook).map((book) => (
                   <BookCard key={book.id} {...book} onRemoveBook={handleRemoveBook} />
                 ))}
               </div>
-              {books.filter(book => !book.isAudiobook).length === 0 && (
+              {booksToShow.filter(book => !book.isAudiobook).length === 0 && (
                 <div className="text-center py-12">
                   <h3 className="text-lg font-medium mb-2">No books in progress</h3>
                   <p className="text-muted-foreground mb-4">Start reading to see your books here</p>
@@ -290,7 +299,7 @@ const Index = () => {
 
             <TabsContent value="listening" className="space-y-6 mt-2">
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-                {books.filter(book => book.isAudiobook).map((book) => (
+                {booksToShow.filter(book => book.isAudiobook).map((book) => (
                   <BookCard
                     key={book.id}
                     {...book}
@@ -299,7 +308,7 @@ const Index = () => {
                   />
                 ))}
               </div>
-              {books.filter(book => book.isAudiobook).length === 0 && (
+              {booksToShow.filter(book => book.isAudiobook).length === 0 && (
                 <div className="text-center py-12">
                   <h3 className="text-lg font-medium mb-2">No audiobooks in progress</h3>
                   <p className="text-muted-foreground mb-4">Start listening to see your audiobooks here</p>
@@ -316,23 +325,25 @@ const Index = () => {
 
         <Separator className="my-8" />
 
-        <section className="mb-10">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold">Recommended for you</h2>
-            <Button variant="ghost" className="text-sm">
-              View all
-            </Button>
-          </div>
-          {recommendedBooks.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-              {recommendedBooks.map((book) => (
-                <BookCard key={`rec-${book.id}`} {...book} onRemoveBook={handleRemoveBook} />
-              ))}
+        {searchQuery === "" && (
+          <section className="mb-10">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-bold">Recommended for you</h2>
+              <Button variant="ghost" className="text-sm">
+                View all
+              </Button>
             </div>
-          ) : (
-            <p className="text-center text-muted-foreground">No recommendations available yet. Add some books to your library!</p>
-          )}
-        </section>
+            {recommendedBooks.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+                {recommendedBooks.map((book) => (
+                  <BookCard key={`rec-${book.id}`} {...book} onRemoveBook={handleRemoveBook} />
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-muted-foreground">No recommendations available yet. Add some books to your library!</p>
+            )}
+          </section>
+        )}
       </main>
 
       <AudioPlayer

@@ -8,6 +8,7 @@ import { StatsProvider } from "./contexts/StatsContext"; // Import StatsProvider
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import BookReaderView from "./pages/BookReaderView"; // Import BookReaderView
+import { NotesProvider } from "./contexts/NotesContext";
 
 const queryClient = new QueryClient();
 
@@ -15,16 +16,18 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <StatsProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/read/:bookId" element={<BookReaderView />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+        <NotesProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/read/:bookId" element={<BookReaderView />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </NotesProvider>
       </StatsProvider>
     </TooltipProvider>
   </QueryClientProvider>
