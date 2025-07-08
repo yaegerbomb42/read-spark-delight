@@ -172,7 +172,12 @@ export const BookProvider: React.FC<{ children: React.ReactNode }> = ({ children
              }
           }
         } else {
-          setBooks([]);
+          // If default books were already loaded and localStorage is empty, respect that.
+          // This prevents re-loading defaults if user intentionally cleared library.
+          // However, if the loadBooks useEffect is triggered for other reasons (e.g. state change),
+          // and there are no books, we shouldn't clear the library. Let's make sure `setBooks([])` is only
+          // called on actual load failure, not on re-renders where `defaultBooksAlreadyLoaded` is true.
+          // For now, removing the `else` that sets books to `[]` when `defaultBooksAlreadyLoaded` is true but no `storedBooksRaw`
         }
       } catch (error) {
         console.error("Failed to parse books from localStorage or load default books", error);
@@ -181,7 +186,7 @@ export const BookProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     loadBooks();
-  }, [incrementTotalBooksImported, userStats.totalBooksImported]);
+  }, []); // Empty dependency array to run only once on mount
 
   useEffect(() => {
     const defaultBooksLoaded = localStorage.getItem('defaultBooksLoaded') === 'true';

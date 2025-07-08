@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom'; // Import useNavigate
 import type { Book } from '@/types';
 import { NotesProvider } from '@/contexts/NotesContext';
 import { BookNotes } from '@/components/BookNotes';
@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { useBook } from '@/contexts/BookContext';
-import { ChevronLeft } from 'lucide-react'; // Import ChevronLeft icon
+import { ChevronLeft } from 'lucide-react';
 
 // Dopamine font import (Google Fonts)
 // Add this to index.html or via @import in CSS for production
@@ -46,6 +46,7 @@ const BookReaderView: React.FC = () => {
   const { bookId } = useParams<{ bookId: string }>();
   const { books, handleUpdateBookProgress } = useBook(); // Use useBook hook
   const book = books.find(b => b.id === bookId);
+  const navigate = useNavigate(); // Initialize navigate hook
 
   // Dopamine mode state
   const [dopamineMode, setDopamineMode] = useState(false);
@@ -65,12 +66,26 @@ const BookReaderView: React.FC = () => {
 
   // Prepare words for highlighting
   useEffect(() => {
-    if (!book) return;
+    if (!book) {
+      console.log("Book not found for ID:", bookId);
+      return;
+    }
+    console.log("Loading book content for:", book.title, "Content length:", book.content?.length);
     let text = book.contentType === 'html'
       ? (book.content.replace(/<[^>]+>/g, ' ')) // crude strip tags
       : book.content;
+    
+    // Handle potential null or undefined content
+    if (!text) {
+      console.warn("Book content is empty or undefined for:", book.title);
+      setWords([]);
+      setCurrentWordIdx(null);
+      return;
+    }
+
     // Split into words, keeping punctuation
-    const split = text.match(/\S+|\n|\s/g) || []; // Include spaces explicitly to ensure proper splitting for highlight
+    const split = text.match(/(\S+|\n|\s)/g) || []; // Capture groups to include spaces and newlines as words
+    console.log("Split words count:", split.length);
     setWords(split);
     setCurrentWordIdx(null);
     // Scroll to previous position if available
@@ -80,7 +95,7 @@ const BookReaderView: React.FC = () => {
       const scrollableHeight = scrollHeight - clientHeight;
       contentRef.current.scrollTop = (book.progress / 100) * scrollableHeight;
     }
-  }, [book]);
+  }, [book, bookId]); // Added bookId to dependencies
 
   // Load voices and pick the best female
   useEffect(() => {
@@ -214,9 +229,9 @@ const BookReaderView: React.FC = () => {
     return (
       <div className="container mx-auto p-4">
         <p>Book not found.</p>
-        <Link to="/" className="text-blue-500 hover:underline">
+        <Button onClick={() => navigate('/')} className="text-blue-500 hover:underline">
           Back to Library
-        </Link>
+        </Button>
       </div>
     );
   }
@@ -228,10 +243,10 @@ const BookReaderView: React.FC = () => {
       >
         <div className="flex items-center justify-between mb-4">
           <div>
-            <Link to="/" className="text-muted-foreground hover:text-primary flex items-center gap-1.5 mb-2">
+            <Button onClick={() => navigate('/')} className="text-muted-foreground hover:text-primary flex items-center gap-1.5 mb-2">
               <ChevronLeft className="h-5 w-5" />
               Back to Library
-            </Link>
+            </Button>
             <h1 className={`text-3xl font-bold mb-2 ${dopamineText}`}>{book.title}</h1>
             <h2 className={`text-xl text-muted-foreground mb-4 ${dopamineText}`}>{book.author}</h2>
           </div>
