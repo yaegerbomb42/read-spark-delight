@@ -114,3 +114,7 @@
     filter: brightness(1.1);
   }
 }
+
+.font-dopamine {
+  font-family: 'Baloo 2', 'Comic Neue', 'Quicksand', sans-serif;
+}
