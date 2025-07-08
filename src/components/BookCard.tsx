@@ -49,9 +49,16 @@ export function BookCard(props: BookCardProps) { // Changed to accept props dire
 
   return (
     <Card 
-  className="group overflow-hidden transition-all duration-300 hover:shadow-lg relative" // Added relative positioning
+      className="group overflow-hidden transition-all duration-300 hover:shadow-lg relative cursor-pointer hover:ring-2 hover:ring-primary/60"
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}
+      onClick={() => {
+        if (isAudiobook && onPlayAudioBook) {
+          onPlayAudioBook({ id, title, author, coverUrl, progress, rating, tags, isAudiobook, content, audioSrc });
+        } else {
+          navigate(`/read/${id}`);
+        }
+      }}
     >
       {/* Remove Button */}
       {hovering && (
@@ -63,7 +70,7 @@ export function BookCard(props: BookCardProps) { // Changed to accept props dire
                 size="icon"
                 className="absolute top-1 right-1 z-10 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                 onClick={(e) => {
-                  e.stopPropagation(); // Prevent card click or other parent events
+                  e.stopPropagation();
                   onRemoveBook(id);
                 }}
               >
@@ -77,19 +84,20 @@ export function BookCard(props: BookCardProps) { // Changed to accept props dire
 
       <CardHeader className="p-0 h-[220px] overflow-hidden relative">
         <img 
-          src={coverUrl || "https://via.placeholder.com/200x300?text=Book+Cover"} 
+          src={coverUrl && coverUrl !== '/placeholder.svg' ? coverUrl : 'https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=400&q=80'}
           alt={title}
           className="w-full h-full object-cover book-cover transition-all duration-500 group-hover:scale-105"
         />
-        <div className="absolute top-2 right-2"> {/* Adjusted this to avoid clash if X button is on the right */}
+        <div className="absolute top-2 right-2">
           {isAudiobook && (
-            <Badge variant="secondary" className="flex items-center gap-1 mr-8"> {/* Added margin if X is on right */}
+            <Badge variant="secondary" className="flex items-center gap-1 mr-8">
               <Headphones className="h-3 w-3" />
               <span>Audio</span>
             </Badge>
           )}
         </div>
-        {hovering && (
+        {/* Only show play button for audiobooks */}
+        {hovering && isAudiobook && (
           <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
             <Button
               variant="default"
@@ -97,19 +105,8 @@ export function BookCard(props: BookCardProps) { // Changed to accept props dire
               className="rounded-full w-12 h-12 flex items-center justify-center bg-primary/90 hover:bg-primary"
               onClick={(e) => {
                 e.stopPropagation();
-                if (isAudiobook) {
-                  if (onPlayAudioBook) {
-                    // Reconstruct the Book object from props to pass to onPlayAudioBook
-                    const bookData: BookType = {
-                      id, title, author, coverUrl, progress, rating, tags, isAudiobook, content, audioSrc
-                    };
-                    onPlayAudioBook(bookData);
-                  } else {
-                    console.log("onPlayAudioBook prop not provided for ID:", id);
-                  }
-                } else {
-                  // Pass the whole book object (props) as route state
-                  navigate(`/read/${id}`, { state: { book: props as BookType } });
+                if (onPlayAudioBook) {
+                  onPlayAudioBook({ id, title, author, coverUrl, progress, rating, tags, isAudiobook, content, audioSrc });
                 }
               }}
             >

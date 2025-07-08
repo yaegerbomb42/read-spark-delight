@@ -4,6 +4,11 @@ import type { Book } from '@/types';
 import { NotesProvider } from '@/contexts/NotesContext';
 import { BookNotes } from '@/components/BookNotes';
 import { useTTS } from '@/hooks/useTTS';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
+import { useBook } from '@/contexts/BookContext';
+import { ChevronLeft } from 'lucide-react'; // Import ChevronLeft icon
 
 // Dopamine font import (Google Fonts)
 // Add this to index.html or via @import in CSS for production
@@ -12,24 +17,35 @@ import { useTTS } from '@/hooks/useTTS';
 const DOPAMINE_FONT = '"Baloo 2", "Comic Neue", "Quicksand", sans-serif';
 
 function getBestFemaleVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
-  // Prioritize Google, then Samantha, then any female
-  const preferred = [
-    /Google US English/i,
-    /Samantha/i,
-    /female/i,
+  const lowerCaseVoices = voices.map(v => ({ voice: v, name: v.name.toLowerCase() }));
+  
+  const preferredKeywords = [
+    /google\s+us\s+english/,
+    /samantha/,
+    /female/,
+    /whisper/,
+    /soft/,
+    /calm/,
+    /serene/,
+    /comfort/,
   ];
-  for (const regex of preferred) {
-    const found = voices.find(v => regex.test(v.name) && v.lang.startsWith('en'));
-    if (found) return found;
+
+  // Prioritize based on keywords and then general female
+  for (const keywordRegex of preferredKeywords) {
+    const found = lowerCaseVoices.find(v => 
+      keywordRegex.test(v.name) && v.voice.lang.startsWith('en')
+    );
+    if (found) return found.voice;
   }
+
   // Fallback: any en voice
   return voices.find(v => v.lang.startsWith('en')) || null;
 }
 
 const BookReaderView: React.FC = () => {
   const { bookId } = useParams<{ bookId: string }>();
-  const storedBooks = JSON.parse(localStorage.getItem('myBooks') || '[]') as Book[];
-  const book = storedBooks.find(b => b.id === bookId);
+  const { books, handleUpdateBookProgress } = useBook(); // Use useBook hook
+  const book = books.find(b => b.id === bookId);
 
   // Dopamine mode state
   const [dopamineMode, setDopamineMode] = useState(false);
@@ -41,6 +57,11 @@ const BookReaderView: React.FC = () => {
   const [words, setWords] = useState<string[]>([]);
   const [voice, setVoice] = useState<SpeechSynthesisVoice | null>(null);
   const [voicesLoaded, setVoicesLoaded] = useState(false);
+  const [voiceIndex, setVoiceIndex] = useState<number>(-1);
+  const [allVoices, setAllVoices] = useState<SpeechSynthesisVoice[]>([]);
+  
+  // Ref for the content container to track scroll for progress
+  const contentRef = useRef<HTMLDivElement>(null);
 
   // Prepare words for highlighting
   useEffect(() => {
@@ -49,9 +70,16 @@ const BookReaderView: React.FC = () => {
       ? (book.content.replace(/<[^>]+>/g, ' ')) // crude strip tags
       : book.content;
     // Split into words, keeping punctuation
-    const split = text.match(/\S+|\n/g) || [];
+    const split = text.match(/\S+|\n|\s/g) || []; // Include spaces explicitly to ensure proper splitting for highlight
     setWords(split);
     setCurrentWordIdx(null);
+    // Scroll to previous position if available
+    if (contentRef.current && book.progress) {
+      const scrollHeight = contentRef.current.scrollHeight;
+      const clientHeight = contentRef.current.clientHeight;
+      const scrollableHeight = scrollHeight - clientHeight;
+      contentRef.current.scrollTop = (book.progress / 100) * scrollableHeight;
+    }
   }, [book]);
 
   // Load voices and pick the best female
@@ -59,8 +87,11 @@ const BookReaderView: React.FC = () => {
     if (!isSupported) return;
     const loadVoices = () => {
       const voices = window.speechSynthesis.getVoices();
+      setAllVoices(voices);
       if (voices.length > 0) {
-        setVoice(getBestFemaleVoice(voices));
+        const best = getBestFemaleVoice(voices);
+        setVoice(best);
+        setVoiceIndex(best ? voices.findIndex(v => v === best) : 0);
         setVoicesLoaded(true);
       }
     };
@@ -71,6 +102,13 @@ const BookReaderView: React.FC = () => {
     };
   }, [isSupported]);
 
+  // Update voice when user selects
+  useEffect(() => {
+    if (voiceIndex >= 0 && allVoices[voiceIndex]) {
+      setVoice(allVoices[voiceIndex]);
+    }
+  }, [voiceIndex, allVoices]);
+
   // TTS boundary event: highlight word
   const handleBoundary = useCallback((event: SpeechSynthesisEvent) => {
     if (!words.length) return;
@@ -78,7 +116,7 @@ const BookReaderView: React.FC = () => {
     const charIndex = event.charIndex;
     let acc = 0;
     for (let i = 0; i < words.length; i++) {
-      acc += words[i].length + 1; // +1 for space/newline
+      acc += words[i].length + (words[i] === '\n' ? 0 : 1); // Only add 1 for space if not newline
       if (charIndex < acc) {
         setCurrentWordIdx(i);
         break;
@@ -96,15 +134,15 @@ const BookReaderView: React.FC = () => {
   // TTS play
   const handlePlay = () => {
     if (!book || !words.length) return;
-    let text = words.join(' ');
+    const textToSpeak = words.map(w => w === '\n' ? '\n' : w).join(''); // Keep newlines for speech, but no extra spaces
     const utterOptions = {
       onBoundary: handleBoundary,
       onStart: handleTTSStart,
       onEnd: handleTTSEnd,
     };
-    // Use best female voice if available
+    
     if (voice) {
-      const utter = new window.SpeechSynthesisUtterance(text);
+      const utter = new window.SpeechSynthesisUtterance(textToSpeak);
       utter.voice = voice;
       utter.lang = voice.lang;
       utter.onboundary = utterOptions.onBoundary;
@@ -113,14 +151,64 @@ const BookReaderView: React.FC = () => {
       window.speechSynthesis.cancel();
       window.speechSynthesis.speak(utter);
     } else {
-      speak(text, 'en-US', utterOptions);
+      // Fallback if no specific voice selected or found (shouldn't happen with default selection)
+      speak(textToSpeak, 'en-US', utterOptions);
     }
   };
+
+  // Handle manual voice selection via dropdown
+  const handleVoiceChange = (value: string) => {
+    const newIndex = Number(value);
+    setVoiceIndex(newIndex);
+    if (allVoices[newIndex]) {
+      setVoice(allVoices[newIndex]);
+      // If speaking, restart with new voice
+      if (isSpeaking) {
+        cancel();
+        // Small delay to ensure previous speech is fully cancelled
+        setTimeout(handlePlay, 100);
+      }
+    }
+  };
+
+  // Progress tracking
+  const calculateProgress = useCallback(() => {
+    if (!contentRef.current || !book) return 0;
+    const { scrollTop, scrollHeight, clientHeight } = contentRef.current;
+    const scrollableHeight = scrollHeight - clientHeight;
+    if (scrollableHeight <= 0) return book.progress; // Avoid division by zero, return existing progress
+    
+    const newProgress = (scrollTop / scrollableHeight) * 100;
+    return Math.min(100, Math.max(0, newProgress));
+  }, [book]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!book) return;
+      const newProgress = calculateProgress();
+      // Only update if significant change and different from current book.progress
+      if (Math.abs(newProgress - book.progress) > 1) {
+        handleUpdateBookProgress(book.id, newProgress); // Call context function to update and save
+      }
+    };
+
+    const currentContentRef = contentRef.current;
+    if (currentContentRef) {
+      currentContentRef.addEventListener('scroll', handleScroll);
+    }
+
+    return () => {
+      if (currentContentRef) {
+        currentContentRef.removeEventListener('scroll', handleScroll);
+      }
+    };
+  }, [book, calculateProgress, handleUpdateBookProgress]); // Add handleUpdateBookProgress to dependencies
 
   // Dopamine font and color classes
   const dopamineFont = dopamineMode ? { fontFamily: DOPAMINE_FONT } : {};
   const dopamineBg = dopamineMode ? 'bg-dopamine-100 dark:bg-dopamine-900' : '';
   const dopamineText = dopamineMode ? 'text-dopamine-700 dark:text-dopamine-200' : '';
+  const dopamineHighlight = dopamineMode ? 'bg-dopamine-300 text-dopamine-900 scale-110 animate-pulse font-extrabold shadow-lg' : '';
 
   if (!book) {
     return (
@@ -140,61 +228,96 @@ const BookReaderView: React.FC = () => {
       >
         <div className="flex items-center justify-between mb-4">
           <div>
+            <Link to="/" className="text-muted-foreground hover:text-primary flex items-center gap-1.5 mb-2">
+              <ChevronLeft className="h-5 w-5" />
+              Back to Library
+            </Link>
             <h1 className={`text-3xl font-bold mb-2 ${dopamineText}`}>{book.title}</h1>
             <h2 className={`text-xl text-muted-foreground mb-4 ${dopamineText}`}>{book.author}</h2>
           </div>
           <div className="flex gap-2 items-center">
-            <button
-              className={`px-4 py-2 rounded font-semibold shadow transition-all duration-300 ${dopamineMode ? 'bg-dopamine-400 text-white hover:bg-dopamine-500' : 'bg-primary text-white hover:bg-primary/80'}`}
+            <Button
+              className={`px-4 py-2 rounded font-extrabold shadow transition-all duration-300 border-2 border-dopamine-400 ${dopamineMode ? 'bg-dopamine-400 text-white animate-pulse' : 'bg-primary text-white hover:bg-primary/80'}`}
               onClick={() => setDopamineMode(m => !m)}
             >
-              {dopamineMode ? 'Dopamine Mode On' : 'Dopamine Mode'}
-            </button>
-            <button
+              {dopamineMode ? 'DOPAMINE MODE ON' : 'Dopamine Mode'}
+            </Button>
+            <Select value={String(voiceIndex)} onValueChange={handleVoiceChange} disabled={!voicesLoaded || allVoices.length === 0}>
+              <SelectTrigger className="w-[180px] bg-muted text-primary font-semibold">
+                <SelectValue placeholder="Select Voice" />
+              </SelectTrigger>
+              <SelectContent>
+                {isSupported ? (allVoices.length > 0 ? (
+                  allVoices.map((v, i) => (
+                    <SelectItem key={v.voiceURI} value={String(i)} className={getBestFemaleVoice([v]) ? 'font-bold text-dopamine-600' : ''}>
+                      {v.name} ({v.lang}) {/whisper|soft|asmr|calm|serene|comfort/i.test(v.name) ? '✨' : ''}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="no-voices" disabled>Loading voices...</SelectItem>
+                )) : (
+                  <SelectItem value="not-supported" disabled>
+                    TTS Not Supported (Try Chrome)
+                  </SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+            <Button
               className={`px-4 py-2 rounded font-semibold shadow transition-all duration-300 ${ttsActive ? 'bg-dopamine-500 text-white animate-pulse' : 'bg-secondary text-primary hover:bg-secondary/80'}`}
               onClick={handlePlay}
-              disabled={isSpeaking || !voicesLoaded}
+              disabled={isSpeaking || !voicesLoaded || voiceIndex === -1}
             >
               {isSpeaking ? 'Reading...' : 'Read Aloud'}
-            </button>
-            <button
+            </Button>
+            <Button
               className="px-2 py-2 rounded bg-muted text-muted-foreground hover:bg-muted/80"
               onClick={pause}
               disabled={!isSpeaking || isPaused}
-            >Pause</button>
-            <button
+            >Pause</Button>
+            <Button
               className="px-2 py-2 rounded bg-muted text-muted-foreground hover:bg-muted/80"
               onClick={resume}
               disabled={!isSpeaking || !isPaused}
-            >Resume</button>
-            <button
+            >Resume</Button>
+            <Button
               className="px-2 py-2 rounded bg-destructive text-white hover:bg-destructive/80"
               onClick={() => { cancel(); setTtsActive(false); setCurrentWordIdx(null); }}
               disabled={!isSpeaking && !isPaused}
-            >Stop</button>
+            >Stop</Button>
           </div>
         </div>
-        <div className={`prose max-w-none text-lg leading-relaxed ${dopamineMode ? 'prose-p:text-dopamine-700 prose-p:font-bold' : ''}`}
+        <div 
+          className={cn(
+            `prose max-w-none text-lg leading-relaxed ${dopamineMode ? 'prose-p:text-dopamine-700 prose-p:font-bold' : ''}`,
+            "overflow-y-auto h-[60vh] p-4 border rounded-lg shadow-inner"
+          )} // Merged className properties
           style={dopamineFont}
+          ref={contentRef} // Attach ref for scroll tracking
         >
           {/* Render words with highlight */}
-          <div className="flex flex-wrap gap-y-2">
-            {words.map((word, idx) => (
-              <span
-                key={idx}
-                className={`inline-block transition-all duration-200 px-1 rounded ${
-                  currentWordIdx === idx && ttsActive
-                    ? 'bg-dopamine-300 text-dopamine-900 scale-110 animate-pulse font-extrabold shadow-lg'
-                    : dopamineMode
-                    ? 'hover:bg-dopamine-200 hover:text-dopamine-900 cursor-pointer'
-                    : ''
-                }`}
-                style={dopamineFont}
-              >
-                {word === '\n' ? <br /> : word + ' '}
-              </span>
-            ))}
-          </div>
+          {book.contentType === 'html' ? (
+            <div dangerouslySetInnerHTML={{ __html: book.content }} /> // Render HTML content directly
+          ) : words.length === 0 ? (
+            <div className="text-red-600 font-bold text-xl">No content available for this book.</div>
+          ) : (
+            <div className="flex flex-wrap gap-y-2 text-justify">
+              {words.map((word, idx) => (
+                <span
+                  key={idx}
+                  className={`inline-block transition-all duration-200 px-1 rounded ${
+                    currentWordIdx === idx && ttsActive
+                      ? dopamineHighlight
+                      : dopamineMode
+                      ? 'hover:bg-dopamine-200 hover:text-dopamine-900 cursor-pointer'
+                      : ''
+                  }`}
+                  style={dopamineFont}
+                >
+                  {word === '\n' ? <br /> : word + ' '}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
         <BookNotes bookId={book.id} />
       </div>

@@ -2,57 +2,46 @@ import type { Book } from '@/types';
 
 export const defaultBooksData: Omit<Book, 'content'>[] = [
   {
-    id: 'default-book-1',
-    title: 'The First Adventure',
-    author: 'AI Storyteller',
-    coverUrl: '/placeholder.svg', // You can replace this with actual cover URLs if you have them
+    id: 'pride-and-prejudice',
+    title: 'Pride and Prejudice',
+    author: 'Jane Austen',
+    coverUrl: '/placeholder.svg', // Will be replaced by AI cover
     progress: 0,
     rating: 0,
-    tags: ['adventure', 'fiction'],
+    tags: ['classic', 'romance', 'society'],
     isAudiobook: false,
     contentType: 'text',
   },
   {
-    id: 'default-book-2',
-    title: 'Mysteries of the Cosmos',
-    author: 'Cosmic Voyager',
+    id: 'alice-in-wonderland',
+    title: 'Alice in Wonderland',
+    author: 'Lewis Carroll',
     coverUrl: '/placeholder.svg',
     progress: 0,
     rating: 0,
-    tags: ['science', 'non-fiction', 'space'],
+    tags: ['classic', 'fantasy', 'adventure'],
     isAudiobook: false,
     contentType: 'text',
   },
   {
-    id: 'default-book-3',
-    title: 'A Simple Life',
-    author: 'Philosopher Bot',
+    id: 'moby-dick',
+    title: 'Moby Dick',
+    author: 'Herman Melville',
     coverUrl: '/placeholder.svg',
     progress: 0,
     rating: 0,
-    tags: ['philosophy', 'life'],
+    tags: ['classic', 'adventure', 'sea'],
     isAudiobook: false,
     contentType: 'text',
   },
   {
-    id: 'default-book-4',
-    title: 'Chronicles of Code',
-    author: 'Dev Scribe',
+    id: 'sherlock-holmes',
+    title: 'The Adventures of Sherlock Holmes',
+    author: 'Arthur Conan Doyle',
     coverUrl: '/placeholder.svg',
     progress: 0,
     rating: 0,
-    tags: ['technology', 'programming'],
-    isAudiobook: false,
-    contentType: 'text',
-  },
-  {
-    id: 'default-book-5',
-    title: 'The Last Page',
-    author: 'Narrator X',
-    coverUrl: '/placeholder.svg',
-    progress: 0,
-    rating: 0,
-    tags: ['meta', 'short-story'],
+    tags: ['classic', 'mystery', 'detective'],
     isAudiobook: false,
     contentType: 'text',
   },
@@ -60,9 +49,16 @@ export const defaultBooksData: Omit<Book, 'content'>[] = [
 
 // Function to get the paths for the content files
 export const getDefaultBookContentPath = (id: string): string | null => {
-  const bookNumber = id.split('-').pop();
-  if (bookNumber && parseInt(bookNumber, 10) >= 1 && parseInt(bookNumber, 10) <= 5) {
-    return `/books/book${bookNumber}.txt`;
+  switch (id) {
+    case 'pride-and-prejudice':
+      return '/books/pride_and_prejudice.txt';
+    case 'alice-in-wonderland':
+      return '/books/alice_in_wonderland.txt';
+    case 'moby-dick':
+      return '/books/moby_dick.txt';
+    case 'sherlock-holmes':
+      return '/books/sherlock_holmes.txt';
+    default:
+      return null;
   }
-  return null;
 };

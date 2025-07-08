@@ -1,10 +1,11 @@
 
 import { useState, useEffect } from "react";
-import { Moon, Sun, Search, Bell } from "lucide-react";
+import { Moon, Sun, Search, Bell, Settings } from "lucide-react"; // Import Settings icon
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Link } from "react-router-dom"; // Import Link
 
 interface HeaderProps {
   searchQuery?: string;
@@ -67,17 +68,22 @@ export function Header({ searchQuery = "", onSearchChange }: HeaderProps) {
             )}
           </Button>
 
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-5 w-5" />
-            <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-secondary">
-              3
-            </Badge>
-          </Button>
+          {/* Settings Button (using Bell for now, can be changed to Settings icon) */}
+          <Link to="/settings">
+            <Button variant="ghost" size="icon" className="relative">
+              <Settings className="h-5 w-5" /> {/* Changed from Bell to Settings icon */}
+              {/* Original Bell icon badge for notifications if needed later */}
+              {/* <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-secondary">3</Badge> */}
+            </Button>
+          </Link>
 
-          <Avatar className="h-8 w-8 cursor-pointer hover:ring-2 hover:ring-primary transition-all">
-            <AvatarImage src="" />
-            <AvatarFallback className="bg-dopamine-500 text-white">RD</AvatarFallback>
-          </Avatar>
+          {/* Profile Avatar */}
+          <Link to="/profile">
+            <Avatar className="h-8 w-8 cursor-pointer hover:ring-2 hover:ring-primary transition-all">
+              <AvatarImage src="" />
+              <AvatarFallback className="bg-dopamine-500 text-white">RD</AvatarFallback>
+            </Avatar>
+          </Link>
         </div>
       </div>
     </header>
