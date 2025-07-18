@@ -118,3 +118,52 @@
 .font-dopamine {
   font-family: 'Baloo 2', 'Comic Neue', 'Quicksand', sans-serif;
 }
+
+/* Dopamine mode styles for enhanced reading experience */
+.bg-dopamine-100 {
+  background-color: #fef3e2;
+}
+
+.bg-dopamine-200 {
+  background-color: #fed8b1;
+}
+
+.bg-dopamine-300 {
+  background-color: #feca57;
+}
+
+.bg-dopamine-400 {
+  background-color: #ff9ff3;
+}
+
+.bg-dopamine-500 {
+  background-color: #f368e0;
+}
+
+.bg-dopamine-900 {
+  background-color: #2d3748;
+}
+
+.text-dopamine-200 {
+  color: #fed8b1;
+}
+
+.text-dopamine-600 {
+  color: #ff6b6b;
+}
+
+.text-dopamine-700 {
+  color: #ee5a52;
+}
+
+.text-dopamine-900 {
+  color: #2d3748;
+}
+
+.dark .bg-dopamine-900 {
+  background-color: #1a1a2e;
+}
+
+.dark .text-dopamine-200 {
+  color: #ffeaa7;
+}
