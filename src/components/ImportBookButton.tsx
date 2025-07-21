@@ -165,7 +165,7 @@ export function ImportBookButton({ onBookImported }: ImportBookButtonProps) {
               const page = await pdfDoc.getPage(i);
               const textContent = await page.getTextContent();
               // Ensure item.str is correctly accessed, even if 'item' is typed implicitly as any by some setups
-              textContent.items.forEach(item => { fullText += (item as any).str + " "; });
+              textContent.items.forEach((item: { str: string }) => { fullText += item.str + " "; });
               fullText += "\n"; // Add a newline between pages
             } catch (pageError) {
               console.warn(`Error processing page ${i} of PDF:`, pageError);
@@ -203,7 +203,7 @@ export function ImportBookButton({ onBookImported }: ImportBookButtonProps) {
                file.name.toLowerCase().endsWith(".m4a") ||
                file.name.toLowerCase().endsWith(".m4b")) {
 
-      const createBookWithFallbacks = (fileObj: File, audioUrl: string, duration: number, errorInfo?: any) => {
+      const createBookWithFallbacks = (fileObj: File, audioUrl: string, duration: number, errorInfo?: unknown) => {
         if (errorInfo) console.error("Error reading audio tags, using fallbacks:", errorInfo);
         const fallbackTitle = fileObj.name.replace(/\.[^/.]+$/, "");
         onBookImported({

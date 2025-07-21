@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom'; // Import useNavigate
-import type { Book } from '@/types';
+import { useParams, useNavigate } from 'react-router-dom'; // Import useNavigate
 import { NotesProvider } from '@/contexts/NotesContext';
 import { BookNotes } from '@/components/BookNotes';
 import { useTTS } from '@/hooks/useTTS';
@@ -71,7 +70,7 @@ const BookReaderView: React.FC = () => {
       return;
     }
     console.log("Loading book content for:", book.title, "Content length:", book.content?.length);
-    let text = book.contentType === 'html'
+    const text = book.contentType === 'html'
       ? (book.content.replace(/<[^>]+>/g, ' ')) // crude strip tags
       : book.content;
     
