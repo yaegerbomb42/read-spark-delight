@@ -15,30 +15,39 @@ import { ChevronLeft } from 'lucide-react';
 
 const DOPAMINE_FONT = '"Baloo 2", "Comic Neue", "Quicksand", sans-serif';
 
-function getBestFemaleVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
+function getBestVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
+  if (voices.length === 0) return null;
+  
   const lowerCaseVoices = voices.map(v => ({ voice: v, name: v.name.toLowerCase() }));
   
+  // Prioritize high-quality voices
   const preferredKeywords = [
-    /google\s+us\s+english/,
-    /samantha/,
-    /female/,
-    /whisper/,
-    /soft/,
-    /calm/,
-    /serene/,
-    /comfort/,
+    /premium|enhanced|neural|natural/,
+    /google\s+(us\s+)?english/,
+    /microsoft\s+(zira|hazel|david|mark)/,
+    /samantha|alex|victoria|karen|daniel/,
+    /whisper|soft|calm|serene|comfort/,
+    /female|woman/,
   ];
 
-  // Prioritize based on keywords and then general female
+  // Look for premium/neural voices first (usually higher quality)
   for (const keywordRegex of preferredKeywords) {
     const found = lowerCaseVoices.find(v => 
-      keywordRegex.test(v.name) && v.voice.lang.startsWith('en')
+      keywordRegex.test(v.name) && 
+      (v.voice.lang.startsWith('en') || v.voice.lang === 'en-US')
     );
     if (found) return found.voice;
   }
 
-  // Fallback: any en voice
-  return voices.find(v => v.lang.startsWith('en')) || null;
+  // Fallback to any English voice, preferring US English
+  const usEnglish = voices.find(v => v.lang === 'en-US');
+  if (usEnglish) return usEnglish;
+  
+  const anyEnglish = voices.find(v => v.lang.startsWith('en'));
+  if (anyEnglish) return anyEnglish;
+  
+  // Last resort: any voice
+  return voices[0];
 }
 
 const BookReaderView: React.FC = () => {
@@ -103,10 +112,11 @@ const BookReaderView: React.FC = () => {
       const voices = window.speechSynthesis.getVoices();
       setAllVoices(voices);
       if (voices.length > 0) {
-        const best = getBestFemaleVoice(voices);
+        const best = getBestVoice(voices);
         setVoice(best);
         setVoiceIndex(best ? voices.findIndex(v => v === best) : 0);
         setVoicesLoaded(true);
+        console.log("Best voice selected:", best?.name, best?.lang);
       }
     };
     loadVoices();
@@ -123,51 +133,62 @@ const BookReaderView: React.FC = () => {
     }
   }, [voiceIndex, allVoices]);
 
-  // TTS boundary event: highlight word
-  const handleBoundary = useCallback((event: SpeechSynthesisEvent) => {
-    if (!words.length) return;
-    // Find which word is being spoken
-    const charIndex = event.charIndex;
-    let acc = 0;
-    for (let i = 0; i < words.length; i++) {
-      acc += words[i].length + (words[i] === '\n' ? 0 : 1); // Only add 1 for space if not newline
-      if (charIndex < acc) {
-        setCurrentWordIdx(i);
-        break;
-      }
-    }
-  }, [words]);
-
-  // TTS start/end: reset highlight
-  const handleTTSStart = () => setTtsActive(true);
-  const handleTTSEnd = () => {
-    setTtsActive(false);
-    setCurrentWordIdx(null);
-  };
-
   // TTS play
   const handlePlay = () => {
-    if (!book || !words.length) return;
-    const textToSpeak = words.map(w => w === '\n' ? '\n' : w).join(''); // Keep newlines for speech, but no extra spaces
-    const utterOptions = {
-      onBoundary: handleBoundary,
-      onStart: handleTTSStart,
-      onEnd: handleTTSEnd,
+    if (!book || !words.length || !voice) return;
+    
+    console.log("Starting TTS with voice:", voice.name, voice.lang);
+    
+    const textToSpeak = words.map(w => w === '\n' ? '\n' : w).join('');
+    
+    // Cancel any existing speech
+    if (window.speechSynthesis.speaking) {
+      window.speechSynthesis.cancel();
+      setTtsActive(false);
+      setCurrentWordIdx(null);
+      // Wait a bit before starting new speech
+      setTimeout(() => handlePlay(), 100);
+      return;
+    }
+    
+    const utterance = new window.SpeechSynthesisUtterance(textToSpeak);
+    utterance.voice = voice;
+    utterance.lang = voice.lang;
+    utterance.rate = 0.9; // Slightly slower for better comprehension
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+    
+    utterance.onstart = () => {
+      console.log("TTS started successfully");
+      setTtsActive(true);
     };
     
-    if (voice) {
-      const utter = new window.SpeechSynthesisUtterance(textToSpeak);
-      utter.voice = voice;
-      utter.lang = voice.lang;
-      utter.onboundary = utterOptions.onBoundary;
-      utter.onstart = utterOptions.onStart;
-      utter.onend = utterOptions.onEnd;
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(utter);
-    } else {
-      // Fallback if no specific voice selected or found (shouldn't happen with default selection)
-      speak(textToSpeak, 'en-US', utterOptions);
-    }
+    utterance.onend = () => {
+      console.log("TTS ended");
+      setTtsActive(false);
+      setCurrentWordIdx(null);
+    };
+    
+    utterance.onerror = (event) => {
+      console.error("TTS error:", event);
+      setTtsActive(false);
+      setCurrentWordIdx(null);
+    };
+    
+    utterance.onboundary = (event) => {
+      if (!words.length) return;
+      const charIndex = event.charIndex;
+      let acc = 0;
+      for (let i = 0; i < words.length; i++) {
+        if (charIndex <= acc) {
+          setCurrentWordIdx(i);
+          break;
+        }
+        acc += words[i].length + (words[i] === '\n' ? 0 : 1);
+      }
+    };
+
+    window.speechSynthesis.speak(utterance);
   };
 
   // Handle manual voice selection via dropdown
@@ -220,9 +241,14 @@ const BookReaderView: React.FC = () => {
 
   // Dopamine font and color classes
   const dopamineFont = dopamineMode ? { fontFamily: DOPAMINE_FONT } : {};
-  const dopamineBg = dopamineMode ? 'bg-dopamine-100 dark:bg-dopamine-900' : '';
-  const dopamineText = dopamineMode ? 'text-dopamine-700 dark:text-dopamine-200' : '';
-  const dopamineHighlight = dopamineMode ? 'bg-dopamine-300 text-dopamine-900 scale-110 animate-pulse font-extrabold shadow-lg' : '';
+  const dopamineBg = dopamineMode ? 'bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 dark:from-purple-900/30 dark:via-pink-900/30 dark:to-blue-900/30' : '';
+  const dopamineText = dopamineMode ? 'text-purple-700 dark:text-purple-200' : '';
+  const dopamineHighlight = dopamineMode 
+    ? 'bg-gradient-to-r from-yellow-300 via-pink-300 to-purple-300 text-purple-900 scale-110 animate-pulse font-extrabold shadow-lg border-2 border-yellow-400 rounded-lg' 
+    : 'bg-blue-200 text-blue-900 font-semibold';
+  const dopamineWordHover = dopamineMode 
+    ? 'hover:bg-gradient-to-r hover:from-yellow-200 hover:to-pink-200 hover:text-purple-800 hover:scale-105 transform transition-all duration-200 cursor-pointer hover:shadow-md hover:rounded hover:border hover:border-purple-300' 
+    : '';
 
   if (!book) {
     return (
@@ -251,10 +277,14 @@ const BookReaderView: React.FC = () => {
           </div>
           <div className="flex gap-2 items-center">
             <Button
-              className={`px-4 py-2 rounded font-extrabold shadow transition-all duration-300 border-2 border-dopamine-400 ${dopamineMode ? 'bg-dopamine-400 text-white animate-pulse' : 'bg-primary text-white hover:bg-primary/80'}`}
+              className={`px-4 py-2 rounded font-extrabold shadow-lg transition-all duration-300 border-2 ${
+                dopamineMode 
+                  ? 'bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 text-white animate-pulse border-yellow-400 shadow-yellow-300/50' 
+                  : 'bg-primary text-white hover:bg-primary/80 border-primary'
+              }`}
               onClick={() => setDopamineMode(m => !m)}
             >
-              {dopamineMode ? 'DOPAMINE MODE ON' : 'Dopamine Mode'}
+              {dopamineMode ? '✨ DOPAMINE MODE ACTIVE ✨' : '⚡ Activate Dopamine Mode'}
             </Button>
             <Select value={String(voiceIndex)} onValueChange={handleVoiceChange} disabled={!voicesLoaded || allVoices.length === 0}>
               <SelectTrigger className="w-[180px] bg-muted text-primary font-semibold">
@@ -263,8 +293,8 @@ const BookReaderView: React.FC = () => {
               <SelectContent>
                 {isSupported ? (allVoices.length > 0 ? (
                   allVoices.map((v, i) => (
-                    <SelectItem key={v.voiceURI} value={String(i)} className={getBestFemaleVoice([v]) ? 'font-bold text-dopamine-600' : ''}>
-                      {v.name} ({v.lang}) {/whisper|soft|asmr|calm|serene|comfort/i.test(v.name) ? '✨' : ''}
+                    <SelectItem key={v.voiceURI} value={String(i)} className={getBestVoice([v]) ? 'font-bold text-purple-600' : ''}>
+                      {v.name} ({v.lang}) {/premium|enhanced|neural|natural|google|microsoft/i.test(v.name) ? '⭐' : ''} {/whisper|soft|asmr|calm|serene|comfort/i.test(v.name) ? '✨' : ''}
                     </SelectItem>
                   ))
                 ) : (
@@ -277,11 +307,15 @@ const BookReaderView: React.FC = () => {
               </SelectContent>
             </Select>
             <Button
-              className={`px-4 py-2 rounded font-semibold shadow transition-all duration-300 ${ttsActive ? 'bg-dopamine-500 text-white animate-pulse' : 'bg-secondary text-primary hover:bg-secondary/80'}`}
+              className={`px-4 py-2 rounded font-semibold shadow-lg transition-all duration-300 ${
+                ttsActive 
+                  ? 'bg-gradient-to-r from-green-500 to-blue-500 text-white animate-pulse shadow-green-300/50' 
+                  : 'bg-secondary text-primary hover:bg-secondary/80'
+              }`}
               onClick={handlePlay}
               disabled={isSpeaking || !voicesLoaded || voiceIndex === -1}
             >
-              {isSpeaking ? 'Reading...' : 'Read Aloud'}
+              {isSpeaking ? '🔊 Reading...' : '🎵 Read Aloud'}
             </Button>
             <Button
               className="px-2 py-2 rounded bg-muted text-muted-foreground hover:bg-muted/80"
@@ -318,14 +352,28 @@ const BookReaderView: React.FC = () => {
               {words.map((word, idx) => (
                 <span
                   key={idx}
-                  className={`inline-block transition-all duration-200 px-1 rounded ${
+                  className={`inline-block transition-all duration-300 px-1 py-0.5 mx-0.5 rounded ${
                     currentWordIdx === idx && ttsActive
                       ? dopamineHighlight
                       : dopamineMode
-                      ? 'hover:bg-dopamine-200 hover:text-dopamine-900 cursor-pointer'
+                      ? `${dopamineWordHover} text-purple-600 font-semibold`
+                      : 'hover:bg-gray-100 hover:text-gray-800'
+                  } ${
+                    // Add random gentle animations in dopamine mode
+                    dopamineMode && Math.random() > 0.8 
+                      ? 'animate-bounce' 
+                      : dopamineMode && Math.random() > 0.9
+                      ? 'animate-pulse'
                       : ''
                   }`}
-                  style={dopamineFont}
+                  style={{
+                    ...dopamineFont,
+                    // Add subtle color variations in dopamine mode
+                    ...(dopamineMode && currentWordIdx !== idx ? {
+                      color: `hsl(${Math.abs(word.charCodeAt(0) * 7) % 360}, 70%, 40%)`,
+                      textShadow: '0 0 2px rgba(255,255,255,0.8)'
+                    } : {})
+                  }}
                 >
                   {word === '\n' ? <br /> : word + ' '}
                 </span>
