@@ -1,10 +1,9 @@
 
 import { useState, useEffect } from "react";
-import { Moon, Sun, Search, Bell, Settings } from "lucide-react"; // Import Settings icon
+import { Moon, Sun, Search, Settings } from "lucide-react"; // Import Settings icon
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom"; // Import Link
 
 interface HeaderProps {

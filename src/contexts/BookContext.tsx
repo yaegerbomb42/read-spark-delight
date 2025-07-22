@@ -124,14 +124,19 @@ export const BookProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const storedBooksRaw = localStorage.getItem('myBooks');
         const defaultBooksAlreadyLoaded = localStorage.getItem('defaultBooksLoaded') === 'true';
+        const contentVersion = localStorage.getItem('contentVersion');
+        const currentVersion = 'v2.0'; // Increment this when content changes
 
-        if (storedBooksRaw && storedBooksRaw !== '[]') {
+        // Force reload if content version doesn't match
+        const shouldForceReload = !contentVersion || contentVersion !== currentVersion;
+
+        if (storedBooksRaw && storedBooksRaw !== '[]' && !shouldForceReload) {
           setBooks(JSON.parse(storedBooksRaw));
           if (!defaultBooksAlreadyLoaded) {
             localStorage.setItem('defaultBooksLoaded', 'true');
           }
-        } else if (!defaultBooksAlreadyLoaded) {
-          console.log("Loading default books for the first time...");
+        } else if (!defaultBooksAlreadyLoaded || shouldForceReload) {
+          console.log("Loading default books for the first time or due to content update...");
           const booksWithContent: Book[] = [];
           for (const bookData of defaultBooksData) {
             const contentPath = getDefaultBookContentPath(bookData.id);
@@ -166,6 +171,7 @@ export const BookProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setBooks(booksWithContent);
           localStorage.setItem('myBooks', JSON.stringify(booksWithContent));
           localStorage.setItem('defaultBooksLoaded', 'true');
+          localStorage.setItem('contentVersion', currentVersion);
           if (incrementTotalBooksImported && typeof userStats.totalBooksImported === 'number') {
              for (let i = 0; i < booksWithContent.length; i++) {
                 incrementTotalBooksImported();

@@ -46,57 +46,35 @@ export const defaultBooksData: Omit<Book, 'content'>[] = [
     contentType: 'text',
   },
   {
-    id: 'book1',
-    title: 'The Art of Simple Reading',
-    author: 'Digital Library',
+    id: 'digital-reading-guide',
+    title: 'The Complete Guide to Digital Reading',
+    author: 'Digital Literature Institute',
     coverUrl: '/placeholder.svg',
     progress: 0,
     rating: 0,
-    tags: ['modern', 'educational', 'simple'],
+    tags: ['technology', 'educational', 'comprehensive'],
     isAudiobook: false,
     contentType: 'text',
   },
   {
-    id: 'book2',
-    title: 'Reading in the Digital Age',
-    author: 'Tech Authors',
+    id: 'storytelling-digital-age',
+    title: 'The Art of Storytelling in the Digital Age',
+    author: 'Narrative Innovation Lab',
     coverUrl: '/placeholder.svg',
     progress: 0,
     rating: 0,
-    tags: ['modern', 'technology', 'educational'],
+    tags: ['storytelling', 'technology', 'creative'],
     isAudiobook: false,
     contentType: 'text',
   },
   {
-    id: 'book3',
-    title: 'Words and Wonder',
-    author: 'Creative Writers',
+    id: 'mindful-technology',
+    title: 'Mindful Technology: A Guide to Digital Wellness',
+    author: 'Wellness Technology Institute',
     coverUrl: '/placeholder.svg',
     progress: 0,
     rating: 0,
-    tags: ['modern', 'creative', 'inspiration'],
-    isAudiobook: false,
-    contentType: 'text',
-  },
-  {
-    id: 'book4',
-    title: 'The Flow of Ideas',
-    author: 'Thought Leaders',
-    coverUrl: '/placeholder.svg',
-    progress: 0,
-    rating: 0,
-    tags: ['modern', 'philosophy', 'ideas'],
-    isAudiobook: false,
-    contentType: 'text',
-  },
-  {
-    id: 'book5',
-    title: 'Digital Reading Journey',
-    author: 'App Developers',
-    coverUrl: '/placeholder.svg',
-    progress: 0,
-    rating: 0,
-    tags: ['modern', 'technology', 'journey'],
+    tags: ['wellness', 'mindfulness', 'technology'],
     isAudiobook: false,
     contentType: 'text',
   },
@@ -113,16 +91,12 @@ export const getDefaultBookContentPath = (id: string): string | null => {
       return '/books/moby_dick.txt';
     case 'sherlock-holmes':
       return '/books/sherlock_holmes.txt';
-    case 'book1':
-      return '/books/book1.txt';
-    case 'book2':
-      return '/books/book2.txt';
-    case 'book3':
-      return '/books/book3.txt';
-    case 'book4':
-      return '/books/book4.txt';
-    case 'book5':
-      return '/books/book5.txt';
+    case 'digital-reading-guide':
+      return '/books/the_complete_guide_to_digital_reading.txt';
+    case 'storytelling-digital-age':
+      return '/books/the_art_of_storytelling_in_digital_age.txt';
+    case 'mindful-technology':
+      return '/books/mindful_technology_digital_wellness.txt';
     default:
       return null;
   }

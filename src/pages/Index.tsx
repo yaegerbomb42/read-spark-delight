@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Header } from "@/components/Header";
 import { BookCard } from "@/components/BookCard";
 import { ReaderStats } from "@/components/ReaderStats";
@@ -9,8 +9,6 @@ import { ImportBookButton } from "@/components/ImportBookButton";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Headphones, Trophy } from "lucide-react";
-import type { Book } from "@/types";
-import { useStats } from "@/contexts/StatsContext";
 import { useBook } from "@/contexts/BookContext"; // Import useBook hook
 import { useDebounce } from "@/hooks/useDebounce";
 // No longer directly importing defaultBooksData, getDefaultBookContentPath, generateBookCover

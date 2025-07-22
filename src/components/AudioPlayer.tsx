@@ -168,7 +168,9 @@ export function AudioPlayer({
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-background backdrop-blur-lg border-t p-3 z-30">
-      <audio ref={audioRef} />
+      <audio ref={audioRef}>
+        <track kind="captions" src="" label="No captions available" />
+      </audio>
       <div className="container flex flex-col sm:flex-row items-center">
         <div className="flex-1 min-w-0 flex items-center mb-2 sm:mb-0">
           <div className="truncate">

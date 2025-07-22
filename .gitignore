@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Test and temporary files
+test-app.js
+verify-app.js
+reset-books.js
+app-test.png
